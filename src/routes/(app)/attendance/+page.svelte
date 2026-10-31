@@ -92,7 +92,7 @@
 	<div class="warn">수정 권한이 꺼져 있어 출석을 등록할 수 없습니다. (최고관리자에게 수정 권한을 받아야 합니다)</div>
 {/if}
 <p class="muted" style="margin-top:-.6rem">주일 오전예배에 참석한 교인을 등록합니다. 명단은 {registry.t1}·{registry.t2} 순으로 보여 줄 뿐이고,
-	주일 오후 {registry.t2} 모임 출석은 홈페이지 출석부에서 {registry.t2} 인도자가 따로 등록합니다.</p>
+	주일 오후 {registry.t2} 모임 출석은 {registry.t2} 인도자가 따로 등록하는 기록입니다.</p>
 
 <div class="card att-bar">
 	<select bind:value={date} aria-label="주일 선택">{#each [...WEEKS].reverse() as d}<option value={d}>{d} ({md(d)}{dow(d)})</option>{/each}</select>

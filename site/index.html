@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ch-manage · 교회 교적 관리 프로그램</title>
+<meta name="description" content="교인 명단, 출석, 심방, 조직, 증명서를 관리하는 무료 웹 프로그램. 저가 PHP 웹호스팅에 설치해서 씁니다." />
+<style>
+	:root {
+		--bg: #f3f5fc; --card: #ffffff; --ink: #17202a; --ink2: #475467; --line: #dde2f3;
+		--accent: #2b3e95; --accent-soft: #e6eafa;
+	}
+	@media (prefers-color-scheme: dark) {
+		:root { --bg: #0f1424; --card: #171e33; --ink: #eef2fa; --ink2: #a8b3c7; --line: #2a3350; --accent: #8fa0ff; --accent-soft: #1f2a4d; }
+	}
+	* { box-sizing: border-box; }
+	body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Noto Sans KR', 'Malgun Gothic', 'Apple SD Gothic Neo', system-ui, sans-serif; line-height: 1.7; }
+	main { max-width: 760px; margin: 0 auto; padding: 48px 20px 64px; display: flex; flex-direction: column; gap: 20px; }
+	h1 { font-size: 34px; line-height: 1.25; margin: 0; }
+	h2 { font-size: 19px; margin: 0 0 8px; }
+	p { margin: 0; color: var(--ink2); }
+	.lead { font-size: 17px; }
+	.card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 22px 24px; }
+	ul { margin: 0; padding-left: 20px; color: var(--ink2); display: flex; flex-direction: column; gap: 4px; }
+	.btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+	.btn { display: inline-flex; align-items: center; justify-content: center; height: 46px; padding: 0 20px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-weight: 700; text-decoration: none; }
+	.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+	@media (prefers-color-scheme: dark) { .btn.primary { color: #0f1424; } }
+	.btn.demo { border: 2px solid #e5484d; color: #e5484d; background: transparent; }
+	.demo-box { margin-top: 14px; padding-top: 16px; border-top: 1px solid var(--line); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+	.note { background: var(--accent-soft); border-color: transparent; }
+	.shots { display: flex; flex-direction: column; gap: 22px; margin-top: 12px; }
+	.shots figure { margin: 0; }
+	.shots img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); }
+	.shots figcaption { margin-top: 6px; font-size: 14px; color: var(--ink2); }
+	.shots figcaption b { color: var(--ink); }
+	code { background: var(--accent-soft); border-radius: 6px; padding: 1px 6px; font-size: 0.92em; }
+	footer { text-align: center; font-size: 13px; color: var(--ink2); }
+	.credit { text-align: center; background: var(--card); border: 2px solid var(--accent); border-radius: 16px; padding: 16px 20px; font-size: 16px; font-weight: 700; color: var(--ink); line-height: 1.8; }
+	.credit a { font-weight: 800; }
+	.credit .sep { color: var(--ink2); margin: 0 6px; font-weight: 400; }
+	a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+	<header>
+		<h1>교회 교적 관리 프로그램</h1>
+		<p class="lead">교인 명단, 출석, 심방, 조직, 증명서를 한 곳에서 (ch-manage)</p>
+	</header>
+
+	<section class="card">
+		<h2>이런 프로그램이에요</h2>
+		<p>교인 명단(교적)을 관리하는 교역자와 교적 담당자를 위한 웹 프로그램입니다. cafe24와 같은 PHP + MariaDB 웹호스팅에 설치해서 사용하고, 무료로 배포합니다.</p>
+	</section>
+
+	<section class="card">
+		<h2>주요 기능</h2>
+		<ul>
+			<li>교인 목록과 교적 카드: 이름·전화·직분 무엇이든 한 번에 검색, 여러 조건 필터, 엑셀 내려받기, 사진과 재적·신급·직분 이력, 세대</li>
+			<li>공동체·소그룹 편성표와 명단(인쇄·엑셀·PDF), 인도자 특이사항</li>
+			<li>주일 출석 체크, 오래 나오지 않은 교인 알림, 출석 추이와 통계 그래프</li>
+			<li>심방 기록과 캘린더(전임 교역자만), 입원·수술 같은 일정을 심방 내용에서 자동으로</li>
+			<li>교회 조직표, 교적부·증명서·기부금 영수증·교인 요람 출력</li>
+			<li>가입 신청을 최고관리자가 승인하고 등급(A·B·C)으로 정하는 접근 권한, 접속 기록</li>
+			<li>교회마다 다른 이름(공동체·교구, 소그룹·구역·목장·셀)과 나이 계산 방식을 설정으로</li>
+			<li>여러 명이 함께 써도 서로 덮어쓰지 않고, 휴대폰에서도 편하게</li>
+		</ul>
+
+		<div class="shots">
+			<figure><img src="img/dashboard.jpg" alt="대시보드" loading="lazy" /><figcaption><b>대시보드</b> · 처리할 일, 현황, 캘린더(절기·성례·심방·생일·공휴일)</figcaption></figure>
+			<figure><img src="img/members.jpg" alt="교인 목록" loading="lazy" /><figcaption><b>교인 목록</b> · 무엇이든 검색, 여러 조건 필터, 오른쪽에 상세</figcaption></figure>
+			<figure><img src="img/group.jpg" alt="소그룹" loading="lazy" /><figcaption><b>소그룹</b> · 인도자와 모임 장소, 출석 추이, 개인별 출석률</figcaption></figure>
+			<figure><img src="img/stats.jpg" alt="통계" loading="lazy" /><figcaption><b>통계</b> · 주일 출석, 교육부서 출석률, 추이 그래프</figcaption></figure>
+			<figure><img src="img/orgs.jpg" alt="교회 조직표" loading="lazy" /><figcaption><b>교회 조직표</b> · 위원회와 부서, 당회·직분자 명단 인쇄·엑셀·PDF</figcaption></figure>
+		</div>
+		<p style="margin-top:12px;font-size:14px">화면의 이름·전화·주소는 모두 만들어 낸 가상 자료입니다.</p>
+	</section>
+
+	<section class="card">
+		<h2>부서 관리 프로그램과 함께 쓰기</h2>
+		<p>교회 부서(유치부·유초등부·중고등부·청년부)를 관리하는 <a href="https://dep-manage.pages.dev">dep-manage</a>와 짝을 이루는 프로그램입니다. 같은 호스팅(같은 데이터베이스)에 두 개를 함께 설치하면, 교육부서 학생·교사를 교인과 연결해서 이름·연락처 같은 인적사항은 교적에서 한 번만 고치면 되고, 부서 관리의 출석은 교적 화면에서 볼 수 있어요. 따로 써도 되고, 하나를 쓰다가 나중에 다른 하나를 추가해도 돼요.</p>
+		<div class="shots">
+			<figure><img src="img/link.jpg" alt="부서 관리 연결 화면" loading="lazy" /><figcaption><b>부서 관리 연결</b> · 이름과 생년월일이 같은 학생은 한꺼번에 연결</figcaption></figure>
+		</div>
+	</section>
+
+	<section class="card">
+		<h2>내려받기와 설치</h2>
+		<p>웹호스팅의 폴더에 올리고 주소로 들어가면 설치 화면이 나옵니다. 데이터베이스 정보, 교회 이름, 관리자 계정만 입력하면 끝이에요. 배포용 zip 파일은 준비 중이라, 지금은 GitHub에서 설치 방법을 보고 직접 올릴 수 있어요.</p>
+		<div class="btns">
+			<a class="btn primary" href="https://github.com/byraju-hub/ch-manage#설치해서-쓰기">설치 방법</a>
+			<a class="btn" href="https://github.com/byraju-hub/ch-manage/releases/latest">최신 버전 내려받기</a>
+			<a class="btn" href="https://github.com/byraju-hub/ch-manage">GitHub</a>
+		</div>
+
+		<div class="demo-box">
+			<a class="btn demo" href="https://church-manage.pages.dev">데모 사이트 구경하기</a>
+			<p>가상 자료가 들어 있는 체험용 화면이에요. 모든 화면을 직접 눌러 볼 수 있고, 입력한 내용은 이 브라우저에만 저장돼요.</p>
+		</div>
+	</section>
+
+	<section class="card note">
+		<h2>이 페이지는 소개용이에요</h2>
+		<p>프로그램은 PHP 서버가 있어야 동작합니다. 이 소개 페이지에서는 로그인하거나 데이터를 입력할 수 없고, 실제 사용은 직접 설치한 웹호스팅에서 하게 됩니다. 교인 정보는 민감한 개인정보라서, 교회마다 자기 호스팅에 직접 설치해서 씁니다.</p>
+	</section>
+
+	<p class="credit">제작: <a href="https://github.com/byraju-hub">byraju</a><span class="sep">/</span>문의 : <a href="mailto:byraju@naver.com">byraju@naver.com</a></p>
+
+	<footer>GNU AGPL-3.0 라이선스 · 누구나 자유롭게 설치해서 쓸 수 있어요</footer>
+</main>
+</body>
+</html>

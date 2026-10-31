@@ -29,7 +29,7 @@ export const people: T.Person[] = [
 	P({ id: 'p9', name: '오새롬', gender: 'F', birth_date: '1995-06-15', phone: '010-0000-0009', occupation: '디자이너', marital_status: '미혼', faith_checked_on: '2026-09-27', guide_person_id: 'p2', previous_church: '가상교회', note: '직장 동료 소개로 방문', category_id: 'm.n.a', edu_dept: '청년부' }),
 	P({ id: 'p10', name: '윤재석', gender: 'M', birth_date: '1958-02-09', phone: '010-0000-0010', reg_no: '0010', marital_status: '기혼', note: '건강 문제로 장기 결석', category_id: 'm.a.n', mission_society: '3남전도회' }),
 	P({ id: 'p11', name: '강수진', gender: 'F', birth_date: '1980-06-30', phone: '010-0000-0011', reg_no: '0011', marital_status: '기혼', previous_church: '가상교회', category_id: 'move' }),
-	P({ id: 'p12', name: '한나리', gender: 'F', birth_date: '1985-08-17', phone: '010-0000-0012', has_account: true, marital_status: '미혼', note: '디모데에서 가져온 자료, 등록일 미상', category_id: 'm.a.s' }),
+	P({ id: 'p12', name: '한나리', gender: 'F', birth_date: '1985-08-17', phone: '010-0000-0012', has_account: true, marital_status: '미혼', note: '이전 프로그램에서 가져온 자료, 등록일 미상', category_id: 'm.a.s' }),
 	P({ id: 'p13', name: '김영수', name_note: 'B', gender: 'M', birth_date: '1975-12-24', phone: '010-0000-0013', reg_no: '0013', occupation: '회사원', marital_status: '기혼', category_id: 'm.a.a', mission_society: '5남전도회' }),
 	// 교역자: 직책(clergy_title)은 구분·직분과 별개. 심방 기록은 전임 교역자까지만 볼 수 있음
 	P({ id: 'p14', name: '정담임', gender: 'M', birth_date: '1972-02-10', phone: '010-0000-0014', has_account: true, reg_no: '0014', marital_status: '기혼', wedding_date: '2000-05-20', clergy_title: '담임목사', category_id: 'm.a.a' }),
@@ -74,7 +74,7 @@ export const statusEvents: T.StatusEvent[] = [
 	S('p9', '등록', '2026-09-27', '새가족'),
 	S('p10', '등록', '2002-03-10'), S('p10', '보류', '2024-09-01', '장기 결석'),
 	S('p11', '전입', '2010-01-17', null, '가상교회'), S('p11', '전출', '2026-03-29', '이사', '부산 가상교회'),
-	S('p12', '등록', null, '디모데에서 가져옴'),
+	S('p12', '등록', null, '이전 프로그램에서 가져옴'),
 	S('p13', '등록', '2008-09-07'),
 	S('p14', '전입', '2020-03-01', '부임', '가상교회'),
 	S('p15', '등록', '1990-01-07'), S('p15', '보관', '2021-06-01', '삭제할 수 없는 교적'),
@@ -115,7 +115,7 @@ export const notes: T.Note[] = [
 	{ id: 'n2', person_id: 'p10', body: '전화 연결 안 됨. 소그룹 인도자가 안부 확인 예정.', author: '교적 담당 간사', created_at: '2026-10-05' }
 ];
 export const legacyMemos: T.LegacyMemo[] = [
-	{ id: 'lm1', person_id: 'p10', body: '(디모데) 2019년 가정 심방 시 부친 소천, 위로 기도.' }
+	{ id: 'lm1', person_id: 'p10', body: '(이전 프로그램) 2019년 가정 심방 시 부친 소천, 위로 기도.' }
 ];
 // 새 시스템 시작 시 일괄 동의로 받음 (운영 방침에 기록). 일부러 몇 명은 동의가 없는 상태로 둠
 const batch = (person_id: string): T.Consent => ({ id: `cb-${person_id}`, person_id, kind: '교적 등록', policy_version: '2026-01', consent_date: '2026-10-01', method: '서면', guardian_name: null, revoked_on: null });

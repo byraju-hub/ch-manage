@@ -7,6 +7,7 @@
 
 - 구조 설계: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - 진행 계획: [PLAN.md](PLAN.md)
+- 소개 페이지: [site/](site/index.html) (Cloudflare Pages에 `site` 폴더를 그대로 올립니다)
 - 라이선스: [GNU AGPL-3.0](LICENSE)
 
 ## 지금 되는 것
@@ -35,6 +36,7 @@
 src/      SvelteKit 정적 앱 (adapter-static). 서버의 PHP API(/api/v1)와 이야기합니다.
 server/   PHP API, 설치 마법사, 데이터베이스 구조(migrations). 사이트 폴더에 그대로 올립니다.
 docs/     설계 문서
+site/     소개 페이지(정적 한 장). Cloudflare Pages: 빌드 명령 없음, 출력 폴더 `site`
 static/   로고·아이콘 등 정적 파일
 ```
 

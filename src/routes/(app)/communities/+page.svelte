@@ -36,7 +36,7 @@
 <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:.6rem;margin-bottom:.6rem">
 	<h1 style="margin:0">{registry.t1} 편성표 <small class="muted">3개 {registry.t1} · {registry.t2} {groups.filter((g) => !g.care).length}개 + 자녀돌봄</small></h1>
 </div>
-<p class="muted" style="margin-top:0">{registry.t1}{registry.josa(registry.t1, '과')} {registry.t2} 편성표입니다. 출석은 현재 운영 중인 홈페이지의 자료를 그대로 공유합니다.</p>
+<p class="muted" style="margin-top:0">{registry.t1}{registry.josa(registry.t1, '과')} {registry.t2} 편성표입니다.</p>
 
 
 {#each registry.communities as c}

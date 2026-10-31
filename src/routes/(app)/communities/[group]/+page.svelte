@@ -57,7 +57,7 @@
 
 	<div class="dash-grid even" style={registry.perms.visit ? undefined : 'grid-template-columns:1fr'}>
 		<section class="card">
-			<div class="card-head"><h2>{registry.t2} 모임 출석 추이</h2><span class="sub">최근 8주 · 홈페이지 출석부(인도자 등록)</span></div>
+			<div class="card-head"><h2>{registry.t2} 모임 출석 추이</h2><span class="sub">최근 8주 · 인도자 등록 기준</span></div>
 			<div class="spark">
 				{#each weekly as w}
 					<div class="col"><span>{w.n}</span><i style="height:{(w.n * 100) / maxN}%"></i><small>{md(w.d)}</small></div>

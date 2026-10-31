@@ -1,7 +1,7 @@
 // 실제 교회 규모(재적 723명, 주일 출석 약 430명)의 가상 교적 데이터를 만듭니다.
 // - 이름·전화·주소는 모두 만들어 낸 값이며 실제 교인 자료를 쓰지 않습니다.
 // - 같은 시드로 만들기 때문에 열 때마다 같은 사람들이 나옵니다. (날짜는 오늘 기준으로 맞춤)
-// - 공동체·소그룹 구성(3개 공동체, 소그룹 27개 + 로뎀나무숲)만 2026년 편성표의 구조를 따릅니다.
+// - 공동체·소그룹 구성(3개 공동체, 소그룹 27개 + 돌봄방)만 2026년 편성표의 구조를 따릅니다.
 import type * as T from './types.ts';
 import { COMMUNITY_DEFS, ORG_UNITS, catId, fixCat, type GroupDef, type L2Code } from './config.ts';
 import { churchSeasons, isoDate, nthSunday } from './calendar.ts';
@@ -554,7 +554,7 @@ export function generate(reservedNames: string[] = [], opts: { targetActive?: nu
 
 	const NOTE = ['전화 연결 안 됨. 소그룹 인도자가 안부 확인 예정.', '주소 변경 안내 받음. 세대 주소 확인 필요.', '앱 가입 안내 완료.', '요람 공개 여부 재확인 필요.', '새가족 교육 안내 완료.'];
 	for (let i = 0; i < 18; i++) notes.push({ id: eid('n'), person_id: pick(activeIds).id, body: pick(NOTE), author: '교적 담당 간사', created_at: daysAgo(ri(1, 200)) });
-	const MEMO = ['(디모데) 이사 후 주소 변경 요청', '(디모데) 가족 중 비신자가 있음', '(디모데) 부부 소그룹 분리 희망', '(디모데) 직장 이동으로 주일 참석이 불규칙'];
+	const MEMO = ['(이전 프로그램) 이사 후 주소 변경 요청', '(이전 프로그램) 가족 중 비신자가 있음', '(이전 프로그램) 부부 소그룹 분리 희망', '(이전 프로그램) 직장 이동으로 주일 참석이 불규칙'];
 	for (let i = 0; i < 60; i++) legacyMemos.push({ id: eid('lm'), person_id: pick(activeIds).id, body: pick(MEMO) });
 
 	// 교회봉사(조직표 부서, 여러 곳 가능)

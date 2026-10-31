@@ -152,7 +152,7 @@
 				<span class="range"><span class="muted">날짜</span><input type="date" bind:value={nfrom} aria-label="시작 날짜" /><span>~</span><input type="date" bind:value={nto} aria-label="끝 날짜" /></span>
 			</div>
 		</div>
-		<p class="muted" style="margin:0 0 .5rem;scroll-margin-top:110px" bind:this={noteTop}>모두 {noteRows.length.toLocaleString()}건{#if npages > 1} · {npage} / {npages}쪽{/if} (홈페이지 출석부에서 {registry.t2} 인도자가 적은 특이사항을 모아 보여 줍니다.)</p>
+		<p class="muted" style="margin:0 0 .5rem;scroll-margin-top:110px" bind:this={noteTop}>모두 {noteRows.length.toLocaleString()}건{#if npages > 1} · {npage} / {npages}쪽{/if} ({registry.t2} 인도자가 적은 특이사항을 모아 보여 줍니다.)</p>
 		<div class="card" style="padding:0;overflow-x:auto">
 			<table class="sm vlist">
 				<thead><tr><th>날짜</th><th>{registry.t1}</th><th>{registry.t2}</th><th>작성</th><th>교인</th><th>특이사항</th></tr></thead>

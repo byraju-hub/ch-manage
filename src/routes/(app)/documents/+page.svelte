@@ -227,7 +227,7 @@
 		{/if}
 		{#if req}
 			<p class={req.status === '승인' ? 'ok' : 'warn'} style="margin:.6rem 0 0">
-				홈페이지 신청 · {reqName(req.person_id)} · {req.kind} · {req.purpose} —
+				교인 신청 · {reqName(req.person_id)} · {req.kind} · {req.purpose} —
 				{req.status === '승인' ? `${req.decided_by} 승인(${req.decided_at}) · 직인이 들어갑니다.` : req.status === '대기' ? '아직 승인 전이라 직인이 들어가지 않습니다.' : '반려된 신청이라 직인이 들어가지 않습니다.'}
 			</p>
 		{/if}
@@ -235,7 +235,7 @@
 
 	<!-- 홈페이지에서 들어온 증명서 신청 -->
 	<div class="card" id="cert-req">
-		<div class="card-head"><h2>홈페이지 증명서 신청{#if pendingReqs}<span class="tag new">대기 {pendingReqs}건</span>{/if}</h2><span class="sub">관리자가 승인한 신청만 직인이 들어간 증명서로 발급됩니다</span></div>
+		<div class="card-head"><h2>증명서 신청{#if pendingReqs}<span class="tag new">대기 {pendingReqs}건</span>{/if}</h2><span class="sub">관리자가 승인한 신청만 직인이 들어간 증명서로 발급됩니다</span></div>
 		<div style="overflow-x:auto">
 			<table class="sm">
 				<thead><tr><th>신청 일시</th><th>이름</th><th>증명서</th><th>용도</th><th>상태</th><th></th></tr></thead>

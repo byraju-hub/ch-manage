@@ -133,7 +133,7 @@
 	<div class="card">
 		<div class="toolbar">
 			<select bind:value={comm}><option>전체</option>{#each registry.communities as c}<option>{c.name}</option>{/each}</select>
-			<span class="muted">주일 오후 {registry.t2} 모임 출석 (홈페이지 출석부에서 인도자가 등록). 칸의 색이 진할수록 출석률이 높습니다. {registry.t2} 이름을 누르면 상세 화면으로 갑니다.</span>
+			<span class="muted">주일 오후 {registry.t2} 모임 출석 (인도자가 등록). 칸의 색이 진할수록 출석률이 높습니다. {registry.t2} 이름을 누르면 상세 화면으로 갑니다.</span>
 		</div>
 	</div>
 	<div class="card" style="padding:0;overflow-x:auto">
