@@ -154,6 +154,7 @@ function user_payload(array $u): array
         'status' => $u['status'],
         'grade' => $u['grade'],
         'is_super' => (int)$u['is_super'] === 1,
+        'is_demo' => (int)($u['is_demo'] ?? 0) === 1,
         'requested_at' => substr((string)$u['requested_at'], 0, 10),
         'decided_at' => $u['decided_at'] === null ? null : substr((string)$u['decided_at'], 0, 10),
         'decided_by' => $u['decided_by_name'] ?? null,

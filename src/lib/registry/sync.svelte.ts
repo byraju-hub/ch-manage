@@ -141,6 +141,7 @@ export class Sync {
 	}
 
 	private async flush() {
+		if (auth.user?.is_demo) { this.dirty = false; return; } // 체험 계정은 저장하지 않음 (화면에서만 바뀜)
 		if (this.inflight) { this.dirty = true; return; }
 		const pend = this.diff($state.snapshot(this.host.data()) as Data);
 		if (!pend.length) { this.dirty = false; if (this.status === 'saving') this.status = 'idle'; return; }

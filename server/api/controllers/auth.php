@@ -8,10 +8,23 @@ declare(strict_types=1);
 function me_payload(?array $u): array
 {
     $church = (string)val("SELECT JSON_VALUE(church_info, '$.name') FROM " . t('site_settings') . ' WHERE id = 1');
-    if (!$u) return ['church' => $church, 'user' => null, 'csrf' => csrf_token()];
+    if (!$u) return ['church' => $church, 'user' => null, 'demoAccount' => demo_account_exists(), 'csrf' => csrf_token()];
     $dec = row('SELECT name FROM ' . t('users') . ' WHERE id = ?', [$u['decided_by'] ?? 0]);
     $u['decided_by_name'] = $dec['name'] ?? null;
     return ['church' => $church, 'user' => user_payload($u), 'perms' => perms_of($u), 'grades' => grade_defs(), 'csrf' => csrf_token()];
+}
+
+const DEMO_LOGIN = 'demo';
+const DEMO_PASSWORD = '1234';
+
+/** 체험 계정이 켜져 있는지 (로그인 화면이 안내를 보여 주는 데 씀). 아직 데이터베이스 변경 전이면 없는 것으로 본다. */
+function demo_account_exists(): bool
+{
+    try {
+        return (bool)val('SELECT 1 FROM ' . t('users') . ' WHERE login_id = ? AND is_demo = 1', [DEMO_LOGIN]);
+    } catch (Throwable) {
+        return false;
+    }
 }
 
 /** 15분 안에 실패가 많으면 잠시 막는다. 아이디 기준 5번, 접속 주소 기준 20번. */
@@ -129,5 +142,27 @@ route('POST', '/auth/password', function () {
     if ($new === $cur) json_fail('invalid', '지금 쓰는 비밀번호와 다르게 만들어 주세요.', 422);
     q('UPDATE ' . t('users') . ' SET password_hash = ?, must_change_password = 0 WHERE id = ?', [password_hash($new, PASSWORD_DEFAULT), $u['id']]);
     audit('비밀번호 변경', $u['name']);
+    json_out(null);
+});
+
+// 체험 계정: 아이디 demo / 비밀번호 1234. 모든 화면을 볼 수 있지만 서버가 보기 외의 요청을 막는다. 데모 사이트용이다.
+route('POST', '/system/demo-account', function () {
+    $u = require_super();
+    $hash = password_hash(DEMO_PASSWORD, PASSWORD_DEFAULT);
+    $cur = row('SELECT id, is_demo FROM ' . t('users') . ' WHERE login_id = ?', [DEMO_LOGIN]);
+    if ($cur && (int)$cur['is_demo'] !== 1) json_fail('taken', "'" . DEMO_LOGIN . "' 아이디를 이미 다른 사람이 쓰고 있어요.", 409);
+    if ($cur) {
+        q('UPDATE ' . t('users') . " SET password_hash = ?, status = '사용', grade = 'A', is_super = 1 WHERE id = ?", [$hash, $cur['id']]);
+    } else {
+        q('INSERT INTO ' . t('users') . " (login_id, password_hash, name, status, grade, is_super, is_demo, decided_at, decided_by) VALUES (?, ?, '체험 계정', '사용', 'A', 1, 1, NOW(), ?)", [DEMO_LOGIN, $hash, $u['id']]);
+    }
+    audit('체험 계정 켜기', DEMO_LOGIN);
+    json_out(['loginId' => DEMO_LOGIN]);
+});
+
+route('DELETE', '/system/demo-account', function () {
+    require_super();
+    q('DELETE FROM ' . t('users') . ' WHERE login_id = ? AND is_demo = 1', [DEMO_LOGIN]);
+    audit('체험 계정 끄기', DEMO_LOGIN);
     json_out(null);
 });

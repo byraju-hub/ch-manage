@@ -28,6 +28,8 @@
 	@media (prefers-color-scheme: dark) { .btn.primary { color: #0f1424; } }
 	.btn.demo { border: 2px solid #e5484d; color: #e5484d; background: transparent; }
 	.demo-box { margin-top: 14px; padding-top: 16px; border-top: 1px solid var(--line); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+	.demo-box .cred { font-size: 15px; color: var(--ink); }
+	.demo-box .cred b { font-family: ui-monospace, Consolas, monospace; background: var(--accent-soft); border-radius: 6px; padding: 1px 8px; }
 	.note { background: var(--accent-soft); border-color: transparent; }
 	.shots { display: flex; flex-direction: column; gap: 22px; margin-top: 12px; }
 	.shots figure { margin: 0; }
@@ -95,9 +97,10 @@
 		</div>
 
 		<div class="demo-box">
-			<a class="btn demo" href="https://church-manage.pages.dev">데모 사이트 구경하기</a>
-			<p>가상 자료가 들어 있는 체험용 화면이에요. 모든 화면을 직접 눌러 볼 수 있고, 입력한 내용은 이 브라우저에만 저장돼요.</p>
-		</div>
+				<a class="btn demo" href="https://byraju.mycafe24.com/cm/?demo=1">데모 사이트 구경하기</a>
+				<p class="cred">체험용 ID : <b>demo</b> &nbsp; PW : <b>1234</b></p>
+				<p>가상 자료가 들어 있는 체험용 사이트예요. 누르면 자동으로 로그인되고, 관리자 화면까지 모두 볼 수 있지만 저장하거나 바꿀 수는 없어요.</p>
+			</div>
 	</section>
 
 	<section class="card note">

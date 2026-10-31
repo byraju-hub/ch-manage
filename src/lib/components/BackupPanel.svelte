@@ -10,6 +10,12 @@
 	let err = $state('');
 	const can = $derived(registry.canSetup);
 
+	import { auth } from '#lib/registry/auth.svelte.ts';
+	async function toggleDemo(on: boolean) {
+		err = msg = '';
+		try { await auth.setDemoAccount(on); msg = on ? '체험 계정(demo / 1234)을 켰습니다.' : '체험 계정을 껐습니다.'; }
+		catch (e) { err = e instanceof Error ? e.message : '바꾸지 못했습니다.'; }
+	}
 	function save() { registry.saveSite({ backup: cfg }, '백업 설정 저장'); msg = '백업 설정을 저장했습니다.'; }
 	function download() {
 		if (!registry.isSuper) { err = '데이터 전체 내려받기는 최고관리자만 할 수 있습니다.'; return; }
@@ -59,6 +65,14 @@
 		<p class="muted" style="font-size:.8rem;margin:.7rem 0 0">교적 전체가 담긴 파일입니다. 최고관리자만 내려받고 되살릴 수 있고, 접속기록에 남습니다. 되살리면 지금 데이터가 백업 파일 내용으로 바뀝니다.</p>
 	</section>
 </div>
+
+{#if registry.isSuper && !auth.user?.is_demo}
+	<section class="card" style="margin-top:1rem">
+		<h2>체험 계정 (데모 사이트용)</h2>
+		<p class="muted" style="font-size:.85rem;margin:0 0 .7rem">아이디 <b>demo</b> / 비밀번호 <b>1234</b>로 누구나 들어와 모든 화면을 볼 수 있지만, 저장하거나 바꿀 수는 없습니다. 소개 페이지에 올리는 <b>체험용 사이트</b>에서만 켜세요. 실제 교인 자료가 있는 사이트에서는 켜지 마세요.</p>
+		<label class="row" style="gap:.4rem"><input type="checkbox" style="width:auto" checked={auth.demoAccount} onchange={(e) => toggleDemo(e.currentTarget.checked)} />체험 계정 사용</label>
+	</section>
+{/if}
 
 <style>
 	.file-btn { position: relative; overflow: hidden; cursor: pointer; }

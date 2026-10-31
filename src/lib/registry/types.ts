@@ -362,6 +362,7 @@ export interface AppUser {
 	status: UserStatus;
 	grade: Grade | null; // 승인 전에는 없음
 	is_super: boolean; // 최고관리자: 회원 승인·등급 지정·등급 설정 (모든 권한)
+	is_demo?: boolean; // 체험 계정: 모든 화면을 볼 수 있지만 서버가 보기 외의 요청을 막음
 	requested_at: string;
 	decided_at: string | null;
 	decided_by: string | null;

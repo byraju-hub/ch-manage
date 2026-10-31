@@ -15,6 +15,7 @@ const apiBase = () => hrefTo('/api/v1'); // 서브폴더 설치도 맞도록 호
 
 interface MePayload {
 	church?: string; // 교회 이름 (로그인 전 화면에 보임)
+	demoAccount?: boolean; // 체험 계정(demo)이 켜져 있는지
 	user: AppUser | null;
 	perms?: Perms;
 	grades?: GradeDef[];
@@ -26,6 +27,7 @@ class Auth {
 	notInstalled = $state(false);
 	churchName = $state(''); // 교회 이름: 로그인하기 전에도 서버가 알려 줌
 	netError = $state('');
+	demoAccount = $state(false); // 로그인 화면에 체험 계정 안내를 보일지
 	user = $state<AppUser | null>(null);
 	perms = $state<Perms>(NO_PERMS);
 	grades = $state<GradeDef[]>([]);
@@ -67,6 +69,7 @@ class Auth {
 	private apply(d: MePayload) {
 		this.user = d.user;
 		if (d.church !== undefined) this.churchName = d.church;
+		if (d.demoAccount !== undefined) this.demoAccount = d.demoAccount;
 		this.perms = d.perms ?? NO_PERMS;
 		if (d.grades) this.grades = d.grades;
 		if (d.csrf) this.csrf = d.csrf;
@@ -77,7 +80,7 @@ class Auth {
 		try {
 			const d = await this.api<MePayload>('GET', '/auth/me');
 			this.apply(d);
-			if (this.user?.is_super) await this.loadUsers();
+			if (this.user?.is_super && !this.user.is_demo) await this.loadUsers();
 		} catch (e) {
 			if (e instanceof ApiError && e.code === 'not_installed') this.notInstalled = true;
 			else this.netError = e instanceof Error ? e.message : '서버에 연결하지 못했습니다.';
@@ -88,7 +91,15 @@ class Auth {
 
 	async login(loginId: string, password: string) {
 		this.apply(await this.api<MePayload>('POST', '/auth/login', { loginId, password }));
-		if (this.user?.is_super) await this.loadUsers();
+		if (this.user?.is_super && !this.user.is_demo) await this.loadUsers();
+	}
+
+	/** 체험 계정 켜기·끄기 (최고관리자). 아이디 demo / 비밀번호 1234, 보기만 가능 */
+	async setDemoAccount(on: boolean) {
+		if (on) await this.api('POST', '/system/demo-account');
+		else await this.api('DELETE', '/system/demo-account');
+		this.demoAccount = on;
+		await this.loadUsers();
 	}
 
 	async logout() {
@@ -104,7 +115,7 @@ class Auth {
 		await this.api('POST', '/auth/password', { current, next });
 		const d = await this.api<MePayload>('GET', '/auth/me'); // 임시 비밀번호 표시를 지운 상태로 다시 받음
 		this.apply(d);
-		if (this.user?.is_super) await this.loadUsers();
+		if (this.user?.is_super && !this.user.is_demo) await this.loadUsers();
 	}
 
 	// ---- 회원 관리 (최고관리자) ----

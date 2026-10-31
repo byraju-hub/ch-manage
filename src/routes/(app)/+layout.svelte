@@ -44,7 +44,12 @@
 	});
 
 	onMount(() => {
-		auth.init();
+		// 소개 페이지의 '데모 사이트 구경하기'(?demo=1)로 들어오면 체험 계정으로 바로 로그인한다.
+		auth.init().then(async () => {
+			if (page.url.searchParams.get('demo') === '1' && auth.demoAccount && !auth.user) {
+				try { await auth.login('demo', '1234'); last = Date.now(); } catch { /* 안 되면 로그인 화면 그대로 */ }
+			}
+		});
 		const touch = () => (last = Date.now());
 		const outside = (e: MouseEvent) => {
 			if (!(e.target as HTMLElement).closest?.('.perm')) userOpen = false;
@@ -241,6 +246,7 @@
 	</header>
 
 	<main>
+		{#if unlocked && auth.user?.is_demo}<p class="demo-bar" role="status">체험 계정으로 보고 있어요. 모든 화면을 볼 수 있지만, 저장하거나 바꿀 수는 없어요. (바꾼 것은 화면에서만 바뀌고 새로고침하면 돌아와요)</p>{/if}
 		{#if !auth.ready}
 			<div class="card lock"><p class="muted">불러오는 중…</p></div>
 		{:else if auth.notInstalled}
@@ -288,6 +294,7 @@
 						{#if loginMsg}<p style="color:#a83c10;font-size:.88rem;margin:.5rem 0">{loginMsg}</p>{/if}
 						<button type="submit" style="width:100%;margin-top:.5rem" disabled={busy}>로그인</button>
 					</form>
+					{#if auth.demoAccount}<p class="demo-hint">체험해 보기 · 아이디 <b>demo</b> / 비밀번호 <b>1234</b> (보기만 할 수 있어요)</p>{/if}
 					<p class="muted" style="font-size:.82rem;margin-top:1rem">처음이신가요? 가입을 신청하면 최고관리자가 승인한 뒤 쓸 수 있습니다.<br />로그인하면 교적 열람 기록이 남습니다.</p>
 					<p><button type="button" class="ghost sm" onclick={() => { loginMsg = ''; mode = 'signup'; }}>가입 신청</button></p>
 				{:else if mode === 'signup'}
@@ -347,6 +354,8 @@
 </div>
 
 <style>
+	.demo-hint { background: var(--accent-soft, #e6eafa); border-radius: 10px; padding: 8px 12px; font-size: 0.85rem; text-align: center; margin: 0.8rem 0 0; }
+	.demo-bar { background: #e8f1ff; border: 1px solid #b9d2ff; color: #1b4aa8; border-radius: 10px; padding: 8px 14px; font-weight: 600; text-align: center; font-size: 0.88rem; margin: 0 0 0.8rem; }
 	.to-top {
 		position: fixed; right: 1.2rem; bottom: calc(1.2rem + env(safe-area-inset-bottom)); z-index: 35;
 		display: grid; place-items: center; width: 46px; height: 46px; padding: 0; border-radius: 50%;
