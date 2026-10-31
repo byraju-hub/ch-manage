@@ -41,3 +41,6 @@ vite.config.ts.timestamp-*
 # 설치하면 생기는 것(DB 접속 정보·로그·세션·업로드)은 저장소에 올리지 않음
 /server/data/*
 !/server/data/.htaccess
+
+# 배포용 zip 만드는 곳
+/dist/

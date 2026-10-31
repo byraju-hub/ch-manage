@@ -57,9 +57,9 @@ static/   로고·아이콘 등 정적 파일
 
 ## 설치해서 쓰기
 
-배포용 zip(`ch-manage-vX.Y.Z.zip`)을 [Releases](https://github.com/byraju-hub/ch-manage/releases)에서 받을 수 있도록 준비하고 있습니다. 그 전에는 아래 "개발과 배포"처럼 직접 만들어 올릴 수 있습니다.
+[Releases](https://github.com/byraju-hub/ch-manage/releases)에서 `ch-manage-vX.Y.Z.zip` 을 받아 압축을 풀고, 안의 내용을 호스팅 사이트 폴더에 올린 뒤 `/install/` 을 열면 됩니다. 자세한 순서는 zip 안의 `설치가이드.pdf` ([소스](docs/install-guide.html), [PDF](docs/설치가이드.pdf)) 를 보세요.
 
-1. 사이트 폴더(예: `www/cm`)에 `build/`의 내용과 `server/`의 내용을 함께 올립니다.
+1. 사이트 폴더(예: `www/cm`)에 zip 안의 내용을 모두 올립니다. (직접 만들 때는 `build/`와 `server/`의 내용)
 2. 브라우저로 `https://내도메인/cm/install/` 을 열고 안내를 따릅니다. (환경 점검 → 데이터베이스 → 교회 정보 → 관리자 계정)
 3. 새 버전으로 바꿀 때는 파일을 덮어쓴 뒤 `/install/` 을 한 번 열면, 화면 파일의 폴더 주소를 마무리하고 데이터베이스 변경이 있으면 함께 적용합니다. (설정과 자료는 그대로 남습니다.)
 

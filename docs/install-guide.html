@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>ch-manage 설치 가이드</title>
+<style>
+	@page { size: A4; margin: 18mm 16mm; }
+	:root { --accent: #2b3e95; --ink: #17202a; --muted: #5b6678; --line: #dce3f3; --soft: #f3f5fc; }
+	* { box-sizing: border-box; }
+	body { margin: 0; color: var(--ink); font: 11pt/1.75 "Noto Sans KR", "Noto Sans CJK KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; }
+	h1 { font-size: 25pt; margin: 0 0 4px; line-height: 1.25; }
+	h2 { font-size: 15pt; margin: 26px 0 6px; padding-top: 6px; border-top: 2px solid var(--accent); break-after: avoid; }
+	h3 { font-size: 11.5pt; margin: 14px 0 2px; break-after: avoid; }
+	p { margin: 4px 0; }
+	.lead { color: var(--muted); font-size: 12pt; margin-bottom: 14px; }
+	.cover { padding: 6px 0 16px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+	.badge { display: inline-block; background: var(--soft); color: var(--accent); font-weight: 700; padding: 1px 10px; border-radius: 99px; font-size: 10pt; }
+	ol, ul { margin: 4px 0; padding-left: 22px; }
+	li { margin: 3px 0; }
+	code { font-family: Consolas, "D2Coding", monospace; background: var(--soft); padding: 0 5px; border-radius: 4px; font-size: 10pt; }
+	.box { border: 1px solid var(--line); background: var(--soft); border-radius: 10px; padding: 8px 14px; margin: 8px 0; break-inside: avoid; }
+	.warn { border-color: #ffd9a8; background: #fff8ec; }
+	table { border-collapse: collapse; width: 100%; margin: 6px 0; break-inside: avoid; }
+	th, td { border: 1px solid var(--line); padding: 5px 9px; text-align: left; vertical-align: top; font-size: 10.5pt; }
+	th { background: var(--soft); }
+	.step { display: inline-block; width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; font-size: 10pt; margin-right: 6px; }
+	.foot { margin-top: 26px; color: var(--muted); font-size: 9.5pt; border-top: 1px solid var(--line); padding-top: 8px; }
+	.credit { margin-top: 18px; text-align: center; border: 2px solid var(--accent); border-radius: 10px; padding: 10px 14px; font-size: 14pt; font-weight: 700; }
+	.credit a { color: var(--accent); text-decoration: none; }
+	.credit .sep { margin: 0 8px; font-weight: 400; color: #667085; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+	<span class="badge">무료 · 오픈소스 (AGPL-3.0)</span>
+	<h1>ch-manage 설치 가이드</h1>
+	<p class="lead">교회 교적 관리 프로그램을 내 호스팅에 설치하는 방법 — 컴퓨터를 잘 몰라도 따라 할 수 있게 순서대로 적었어요.</p>
+	<p>예상 시간: 30분 안팎 · 필요한 것: 호스팅 계정, 컴퓨터(윈도우/맥), 이 프로그램의 zip 파일</p>
+</div>
+
+<h2>0. 시작하기 전에</h2>
+<table>
+	<tr><th style="width:26%">호스팅</th><td>웹 호스팅 한 곳이 필요해요. 카페24 같은 국내 일반 웹호스팅이면 충분하고, 가장 저렴한 상품으로도 돌아가요. 아래 <b>세 가지</b>가 되는지만 확인하세요.</td></tr>
+	<tr><th>필수 조건</th><td>① PHP 8.1 이상 &nbsp; ② MariaDB 또는 MySQL 데이터베이스 1개 &nbsp; ③ Apache (보통 기본 제공)</td></tr>
+	<tr><th>주소</th><td>도메인 맨 위(<code>https://example.com/</code>)에 설치해도 되고, 폴더(<code>https://example.com/cm/</code>)에 설치해도 돼요. 설치 프로그램이 알아서 맞춰요.</td></tr>
+	<tr><th>보안</th><td>꼭 <b>https</b>(자물쇠 표시) 주소로 쓰세요. 교인 정보가 들어가는 프로그램이에요.</td></tr>
+</table>
+<div class="box warn"><b>개인정보 안내</b> — 교인의 이름·연락처·주소·사진, 그리고 신앙 정보(세례·직분)는 민감한 개인정보예요. 사용하는 교역자와 담당자에게 필요한 만큼만 권한을 주세요. 이 프로그램은 교회가 <b>자기 호스팅에 직접 설치</b>해서 쓰므로 자료는 교회 서버에만 저장돼요.</div>
+
+<h2>1. 데이터베이스 만들기</h2>
+<p>프로그램의 모든 자료가 들어갈 '창고'예요. 호스팅 관리 화면에서 만들고, 아래 <b>네 가지 정보</b>를 메모해 두세요.</p>
+<ul>
+	<li>접속 주소 (카페24는 보통 <code>localhost</code>)</li>
+	<li>데이터베이스 이름</li>
+	<li>데이터베이스 아이디</li>
+	<li>데이터베이스 비밀번호</li>
+</ul>
+<h3>카페24의 경우</h3>
+<ol>
+	<li>카페24 로그인 → <b>마이페이지(나의 서비스 관리)</b> → 사용 중인 호스팅의 <b>관리</b>로 들어가요.</li>
+	<li>메뉴에서 <b>DB 관리</b> 또는 <b>MySQL(DB) 정보</b> 비슷한 이름의 항목을 찾아요. 이미 만들어진 DB의 이름·아이디가 보이고, 비밀번호는 여기서 새로 정할 수 있어요.</li>
+	<li>이 정보를 적어 둬요. (화면 이름은 카페24가 바꿀 수 있어요. 못 찾겠으면 호스팅 고객센터에 "MySQL 접속 정보를 알려주세요"라고 물어보면 돼요.)</li>
+</ol>
+<div class="box">같은 데이터베이스에 다른 프로그램(홈페이지, 부서 관리 dep-manage 등)이 이미 있어도 괜찮아요. 이 프로그램의 표 이름 앞에는 <code>cm_</code>이 붙어서 섞이지 않아요.</div>
+
+<h2>2. 파일 올리기</h2>
+<ol>
+	<li>내려받은 <code>ch-manage-버전.zip</code> 파일을 컴퓨터에서 <b>압축을 풀어요</b>. (우클릭 → 압축 풀기)</li>
+	<li>FTP 프로그램(예: FileZilla)으로 호스팅에 접속해요. 접속 정보는 호스팅에서 알려준 FTP 주소·아이디·비밀번호예요.</li>
+	<li>카페24는 <code>www</code> 폴더가 웹사이트의 맨 위예요. 폴더에 설치하려면 <code>www</code> 안에 새 폴더(예: <code>cm</code>)를 만들어요.</li>
+	<li>압축을 푼 폴더 <b>안의 내용 전부</b>(<code>index.html</code>, <code>_app</code>, <code>api</code>, <code>install</code>, <code>migrations</code>, <code>data</code> 등)를 방금 정한 위치에 올려요. 폴더 자체가 아니라 <b>안에 든 것들</b>이에요.</li>
+	<li>올리는 데 몇 분 걸려요. 끝나면 <code>index.html</code>과 <code>install</code> 폴더가 같은 위치에 보여야 해요.</li>
+</ol>
+<div class="box">호스팅의 <b>파일 관리자(웹FTP)</b>에서 zip을 그대로 올리고 서버에서 압축을 풀 수 있다면 그 방법이 더 빨라요.</div>
+
+<h2>3. data 폴더에 쓰기 권한 주기</h2>
+<p>설치 정보를 저장할 수 있도록 <code>data</code> 폴더를 쓸 수 있게 해야 해요. FTP 프로그램에서 <code>data</code> 폴더를 우클릭 → <b>파일 권한(속성)</b> → 숫자 값에 <code>707</code> (안 되면 <code>777</code>)을 넣어요. 대부분의 호스팅은 이미 되어 있어서 건너뛰어도 돼요. 설치 화면의 점검 단계에서 안 되면 알려 줘요.</p>
+
+<h2>4. 설치 화면 열기</h2>
+<ol>
+	<li>브라우저에서 <code>https://내주소/install/</code> (폴더에 설치했다면 <code>https://내주소/cm/install/</code>)을 열어요.</li>
+	<li><span class="step">1</span><b>환경 점검</b> — 모두 초록색 ✓ 이면 다음으로. 빨간 항목이 있으면 그 항목 설명대로 호스팅 설정을 바꾸거나 고객센터에 문의하세요.</li>
+	<li><span class="step">2</span><b>데이터베이스</b> — 1단계에서 메모한 정보를 넣어요. 접두어는 <code>cm_</code> 그대로 두면 돼요.</li>
+	<li><span class="step">3</span><b>교회 정보</b> — 교회 이름과, 우리 교회에서 쓰는 말(큰 모임 이름: 교구·공동체 등 / 작은 모임 이름: 구역·소그룹·목장·셀 등)을 정해요. 나머지(교단, 주소, 로고, 직인)는 설치 뒤 관리자 메뉴에서 채워요.</li>
+	<li><span class="step">4</span><b>관리자 계정</b> — 교적 전체를 관리할 '최고관리자' 아이디와 비밀번호(8자 이상)를 만들어요. 잊어버리지 않게 적어 두세요.</li>
+	<li>끝나면 <b>로그인하러 가기</b>를 눌러 방금 만든 계정으로 들어가요.</li>
+</ol>
+<div class="box warn">설치가 끝나면 설치 화면은 다시 열리지 않아요(이미 설치됨 안내만 보여요). 설치 중 문제가 생기면 그 시도에서 만든 표는 자동으로 정리되니 처음부터 다시 해도 안전해요.</div>
+
+<h2>5. 처음 설정하기 (로그인 후)</h2>
+<ol>
+	<li><b>샘플 데이터로 먼저 둘러보고 싶다면</b> 대시보드의 <b>샘플 데이터 불러오기</b>를 눌러요. 만들어 낸 가상 교인이 들어가서 화면을 미리 볼 수 있어요. 실제로 쓰기 전에는 샘플을 지우고 시작하세요.</li>
+	<li><b>관리자 › 교회 설정 › 기본 설정</b>에서 교회 이름, 로고, 직인(증명서용)을 넣어요.</li>
+	<li><b>관리자 › 교회 설정</b>의 연간 설정(절기·성례 일정), 교회 조직표, 소그룹 편성을 우리 교회에 맞게 고쳐요.</li>
+	<li><b>관리자 › 프로그램 설정</b>에서 교인 구분, 코드표(직분·세례 등), 확인 목록을 정리해요.</li>
+	<li>함께 쓸 사람들은 로그인 화면의 <b>가입 신청</b>으로 신청하게 하고, 최고관리자가 <b>관리자 › 회원</b>에서 <b>승인</b>하면서 등급(A·B·C)을 정해요.</li>
+	<li>교인 명단은 <b>교인 목록</b>에서 한 명씩 등록하거나 엑셀 양식으로 한꺼번에 올려요.</li>
+</ol>
+
+<h2>6. 등급 한눈에 보기</h2>
+<table>
+	<tr><th>등급</th><th>할 수 있는 일</th></tr>
+	<tr><td>최고관리자</td><td>모든 기능 + 회원 승인·등급 변경, 교회·프로그램 설정, 교인 삭제, 백업, 부서 관리 연결</td></tr>
+	<tr><td>A 등급</td><td>교적 보기·수정 + 심방 기록(심방은 A 등급만)</td></tr>
+	<tr><td>B 등급</td><td>교적 보기·수정 (교인 삭제와 심방은 못 해요)</td></tr>
+	<tr><td>C 등급</td><td>꼭 필요한 정보만 보기</td></tr>
+</table>
+<p>등급별로 <b>수정 · 내려받기·출력 · 사이트 관리</b> 권한을 따로 줄 수 있어요. 누가 언제 무엇을 봤는지는 <b>접속 기록</b>에 남아요.</p>
+
+<h2>7. 백업과 업데이트</h2>
+<h3>백업 (꼭 정기적으로)</h3>
+<p>최고관리자로 로그인 → <b>관리자 › 프로그램 설정 › 백업 › 지금 백업 내려받기</b>. 전체 자료가 파일 하나로 내려와요. 업데이트 전에는 꼭 받아 두세요. 호스팅의 DB 백업 기능도 함께 쓰면 더 안전해요. <i>(백업 파일로 되살리기와 자동 백업은 다음 버전에서 제공할 예정이에요. 지금은 호스팅의 DB 백업을 함께 써 주세요.)</i></p>
+<h3>새 버전으로 업데이트</h3>
+<ol>
+	<li>먼저 위의 방법으로 <b>백업</b>을 받아요.</li>
+	<li>새 zip의 압축을 풀고, 안의 내용을 같은 위치에 <b>덮어써서</b> 올려요. (<code>data</code> 폴더의 설정은 새 zip에 없으니 그대로 남아요.)</li>
+	<li>브라우저에서 <code>…/install/</code> 을 한 번 열어요. "화면 파일을 마무리했어요"라고 나오면 성공이고, 데이터베이스의 변경도 이때 함께 적용돼요.</li>
+	<li>브라우저에서 강력 새로고침(Ctrl+F5)을 한 번 해 주세요.</li>
+</ol>
+
+<h2>8. 부서 관리(dep-manage)와 함께 쓰기</h2>
+<p>교회 부서를 관리하는 짝 프로그램 <b>dep-manage</b>를 같은 데이터베이스에 설치하면, 교육부서 학생·교사를 교인과 연결할 수 있어요. 이름·성별·생년월일·연락처·주소·세례는 교적에서 한 번만 고치면 부서 관리에도 반영되고, 부서·학년·반·출석은 부서 관리의 것을 교적 화면에서 볼 수 있어요. 최고관리자로 <b>관리자 › 프로그램 설정 › 부서 관리 연결</b>에서 <b>연결할 후보 불러오기</b>를 눌러 이름·생년월일이 같은 학생을 한꺼번에 연결하세요. 두 프로그램은 따로 써도 되고, 하나를 쓰다가 나중에 다른 하나를 추가해도 돼요.</p>
+
+<h2>9. 문제가 생겼을 때</h2>
+<table>
+	<tr><th style="width:34%">증상</th><th>확인할 것</th></tr>
+	<tr><td>설치 화면이 안 열리고 빈 화면 또는 오류</td><td>PHP 버전이 8.1 이상인지 호스팅 설정에서 확인하세요. <code>install</code> 폴더가 올라갔는지도 확인하세요.</td></tr>
+	<tr><td>"data 폴더에 쓰기" 가 빨간색</td><td>3번처럼 <code>data</code> 폴더 권한을 707 또는 777로 바꾸세요.</td></tr>
+	<tr><td>데이터베이스에 연결하지 못했어요</td><td>접속 주소·이름·아이디·비밀번호를 다시 확인하세요. 비밀번호의 특수문자나 앞뒤 공백도 확인하세요.</td></tr>
+	<tr><td>로그인 화면은 뜨는데 주소를 직접 입력하면 "페이지 없음"</td><td>사이트 맨 위 폴더에 <code>.htaccess</code> 파일이 있는지 확인하세요(점으로 시작하는 파일은 FTP 프로그램에서 '숨김 파일 보기'를 켜야 보여요). 없으면 <code>…/install/</code> 을 한 번 열면 만들어져요.</td></tr>
+	<tr><td>화면이 하얗거나 글자만 나와요</td><td>업데이트 후라면 <code>…/install/</code> 을 한 번 여세요. 브라우저에서 강력 새로고침(Ctrl+F5)도 해 보세요.</td></tr>
+	<tr><td>"서버에서 문제가 생겼습니다 (404)"가 저장할 때 나와요</td><td>호스팅이 한 번에 보내는 자료 크기를 제한하는 경우예요. 큰 사진을 올렸다면 줄여서 다시 올려 보세요. 계속되면 문의해 주세요.</td></tr>
+	<tr><td>사진·로고·직인이 올라가지 않아요</td><td>호스팅에 <b>GD</b> 확장이 켜져 있는지 설치 화면의 점검 항목을 보세요. 파일이 너무 크면 줄여서 올려 보세요.</td></tr>
+	<tr><td>로그인이 잠겼어요</td><td>비밀번호를 여러 번 틀리면 잠시 로그인이 막혀요. 몇 분 뒤 다시 시도하세요. 비밀번호를 잊었다면 최고관리자에게 임시 비밀번호 발급을 부탁하세요. 최고관리자 본인은 이슈 게시판에 문의해 주세요.</td></tr>
+</table>
+
+<div class="foot">
+	ch-manage는 AGPL-3.0 라이선스의 무료 오픈소스 소프트웨어입니다. 소스와 새 버전: https://github.com/byraju-hub/ch-manage<br>
+	질문·제안은 위 주소의 Issues에 남겨 주세요. 호스팅 화면의 이름과 위치는 업체 사정으로 바뀔 수 있습니다.
+</div>
+
+<p class="credit">제작: <a href="https://github.com/byraju-hub">byraju</a> (https://github.com/byraju-hub)<span class="sep">/</span>문의 : <a href="mailto:byraju@naver.com">byraju@naver.com</a></p>
+
+</body>
+</html>
