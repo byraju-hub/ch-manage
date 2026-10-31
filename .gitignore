@@ -1,0 +1,43 @@
+node_modules
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# local env
+.env
+.env.*
+!.env.example
+.wrangler
+
+# 실제 교인 정보가 들어 있을 수 있는 자료는 저장소에 올리지 않음
+*.xlsx
+*.xls
+*.xlsm
+*.csv
+/private-data/
+/자료/
+# 진짜 교회 직인 등 공개하면 안 되는 이미지 (이 컴퓨터에서만 씀, 저장소·공개 사이트에 올리지 않음)
+/static/private/
+
+# 설치하면 생기는 것(DB 접속 정보·로그·세션·업로드)은 저장소에 올리지 않음
+/server/data/*
+!/server/data/.htaccess
