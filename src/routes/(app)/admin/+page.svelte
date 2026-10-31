@@ -5,7 +5,7 @@
 	import PersonPicker from '#lib/components/PersonPicker.svelte';
 	import { GRADES, type Grade, type Perms } from '#lib/registry/types.ts';
 
-	// 사용자 설정: 가입을 신청한 회원을 최고관리자가 승인하고 등급(A 전임 교역자 · B 교적 관리 · C 열람)을 정합니다.
+	// 사용자 설정: 가입을 신청한 회원을 최고관리자가 승인하고 등급(A 전임 교역자 · B 교적 관리 · C 열람 · D 소그룹 인도자)을 정합니다.
 	// 승인·등급·정지는 서버(PHP)가 최고관리자인지 다시 확인한 뒤 처리합니다.
 	const tabs = ['사용자 목록', '가입 신청', '등급 설정', '접속 기록'];
 	// 대시보드 알림에서 '/admin?tab=가입 신청'으로 들어오면 그 탭부터
@@ -121,7 +121,7 @@
 					<tr>
 						<td><b>{g}</b></td>
 						<td style="min-width:180px">{#if registry.isSuper}<input value={d.name} onchange={(e) => registry.renameGrade(g, e.currentTarget.value)} />{:else}{d.name}{/if}</td>
-						{#each PERMS as p}<td style="text-align:center"><input type="checkbox" checked={p.key === 'visit' ? g === 'A' : d.perms[p.key]} disabled={!registry.isSuper || p.key === 'visit'} title={p.key === 'visit' ? '심방은 A 등급만 (고정)' : undefined} onchange={(e) => registry.setGradePerm(g, p.key, e.currentTarget.checked)} aria-label="{d.name} {p.label}" /></td>{/each}
+						{#each PERMS as p}<td style="text-align:center"><input type="checkbox" checked={p.key === 'visit' ? g === 'A' : d.perms[p.key]} disabled={!registry.isSuper || p.key === 'visit' || g === 'D'} title={g === 'D' ? 'D 등급은 소그룹 출석 체크만 할 수 있어요 (고정)' : p.key === 'visit' ? '심방은 A 등급만 (고정)' : undefined} onchange={(e) => registry.setGradePerm(g, p.key, e.currentTarget.checked)} aria-label="{d.name} {p.label}" /></td>{/each}
 						<td>{count(g)}명</td>
 					</tr>
 				{/each}
@@ -136,7 +136,7 @@
 			{#each PERMS as p}<tr><td><b>{p.label}</b></td><td>{p.hint}</td></tr>{/each}
 			<tr><td><b>최고관리자</b></td><td>모든 권한 + 가입 승인, 등급 지정, 등급 설정, 사용 정지</td></tr>
 		</tbody></table>
-		<p class="muted" style="font-size:.82rem">기본값: A 전임 교역자(수정·출력·심방) / B 교적 관리(수정·출력) / C 열람. 심방은 A 등급(전임 교역자)만 볼 수 있고 바꿀 수 없습니다. 달력의 심방 계획(이름·날짜)은 모든 회원에게 보입니다.</p>
+		<p class="muted" style="font-size:.82rem">기본값: A 전임 교역자(수정·출력·심방) / B 교적 관리(수정·출력) / C 열람 / D 소그룹 인도자(교적 화면은 열 수 없고, 연결된 교인이 인도하는 소그룹의 출석 체크만 할 수 있음 — 사용자 목록에서 '연결된 교인'을 꼭 지정하세요). 심방은 A 등급(전임 교역자)만 볼 수 있고 바꿀 수 없습니다. 달력의 심방 계획(이름·날짜)은 모든 회원에게 보입니다.</p>
 	</div>
 {:else}
 	<div class="card">

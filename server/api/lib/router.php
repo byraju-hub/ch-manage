@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 // 아주 작은 라우터. route('GET', '/users/{id}', fn(int $id) => ...) 처럼 등록하고 dispatch() 가 맞는 것을 실행한다.
 //   {id}    → 숫자 (정수로 넘겨준다)
-//   {grade} → A, B, C 중 하나 (문자열로 넘겨준다)
+//   {grade} → A, B, C, D 중 하나 (문자열로 넘겨준다)
 //   {uuid}  → UUID 모양 글자 · {name} → logo 또는 seal
 
 /** @var array<int, array{string, string, callable}> */
@@ -11,7 +11,7 @@ $GLOBALS['cm_routes'] = [];
 
 function route(string $method, string $pattern, callable $handler): void
 {
-    $rx = preg_replace(['/\{id\}/', '/\{grade\}/', '/\{uuid\}/', '/\{name\}/'], ['(\d+)', '([ABC])', '([0-9a-fA-F-]{36})', '(logo|seal)'], $pattern);
+    $rx = preg_replace(['/\{id\}/', '/\{grade\}/', '/\{uuid\}/', '/\{name\}/'], ['(\d+)', '([ABCD])', '([0-9a-fA-F-]{36})', '(logo|seal)'], $pattern);
     $GLOBALS['cm_routes'][] = [$method, '#^' . $rx . '$#', $handler];
 }
 
@@ -25,6 +25,7 @@ function dispatch(string $path): never
     $method = req_method();
     $pathMatched = false;
     guard_demo($method, $path);
+    guard_leader($method, $path);
     foreach ($GLOBALS['cm_routes'] as [$m, $rx, $handler]) {
         if (!preg_match($rx, $path, $match)) continue;
         $pathMatched = true;
@@ -50,4 +51,15 @@ function guard_demo(string $method, string $path): void
     if (preg_match('#^/users(/|$)#', $path)) {
         json_fail('demo_readonly', '체험 계정에서는 볼 수 없는 화면이에요.', 403);
     }
+}
+
+/** 소그룹 인도자(D 등급, 최고관리자 아님)는 로그인·로그아웃·내 비밀번호·자기 소그룹 출석(/leader)·교회 로고만 쓸 수 있다.
+ *  교적 자료를 받는 주소(/bootstrap, /sync, /files …)는 모두 막는다. */
+function guard_leader(string $method, string $path): void
+{
+    if (preg_match('#^/auth/#', $path) || $path === '/system/status') return;
+    $u = current_user();
+    if (!$u || !is_leader_user($u)) return;
+    if (preg_match('#^/leader/#', $path) || ($method === 'GET' && $path === '/files/logo')) return;
+    json_fail('forbidden', '소그룹 인도자는 소그룹 출석 화면만 쓸 수 있습니다.', 403);
 }

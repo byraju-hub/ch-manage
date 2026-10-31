@@ -33,7 +33,7 @@ route('POST', '/users/{id}/approve', function (int $id) {
     $me = require_super();
     $u = find_user($id);
     if ($u['status'] !== '승인 대기') json_fail('invalid', '승인 대기 중인 신청이 아닙니다.', 409);
-    $grade = in_enum(body(), 'grade', ['A', 'B', 'C'], '등급');
+    $grade = in_enum(body(), 'grade', ['A', 'B', 'C', 'D'], '등급');
     q('UPDATE ' . t('users') . " SET status = '사용', grade = ?, decided_at = NOW(), decided_by = ? WHERE id = ?", [$grade, $me['id'], $id]);
     audit('회원 승인', $u['name'], ['grade' => $grade]);
     json_out(['users' => users_list()]);
@@ -42,7 +42,7 @@ route('POST', '/users/{id}/approve', function (int $id) {
 route('POST', '/users/{id}/grade', function (int $id) {
     require_super();
     $u = find_user($id);
-    $grade = in_enum(body(), 'grade', ['A', 'B', 'C'], '등급');
+    $grade = in_enum(body(), 'grade', ['A', 'B', 'C', 'D'], '등급');
     q('UPDATE ' . t('users') . ' SET grade = ? WHERE id = ?', [$grade, $id]);
     audit('등급 변경', $u['name'], ['grade' => $grade]);
     json_out(['users' => users_list()]);
@@ -76,8 +76,8 @@ route('POST', '/users/{id}/person', function (int $id) {
     $u = find_user($id);
     $pid = body()['personId'] ?? null;
     if ($pid !== null) {
-        $pid = (int)$pid;
-        if (!val('SELECT 1 FROM ' . t('people') . ' WHERE id = ?', [$pid])) json_fail('not_found', '연결할 교인을 찾을 수 없습니다.', 404);
+        $pid = strtolower((string)$pid);
+        if (!preg_match('/^[0-9a-f-]{36}$/', $pid) || !val('SELECT 1 FROM ' . t('people') . ' WHERE id = ?', [$pid])) json_fail('not_found', '연결할 교인을 찾을 수 없습니다.', 404);
     }
     q('UPDATE ' . t('users') . ' SET person_id = ? WHERE id = ?', [$pid, $id]);
     audit('교인 연결', $u['name']);
@@ -115,6 +115,7 @@ route('POST', '/grades/{grade}', function (string $grade) {
         q('UPDATE ' . t('grades') . ' SET name = ? WHERE grade = ?', [$name, $grade]);
         audit('등급 이름 변경', $grade, ['name' => $name]);
     } else {
+        if ($grade === 'D') json_fail('forbidden', 'D 등급(소그룹 인도자)의 권한은 바꿀 수 없습니다.', 403);
         $perm = in_enum($b, 'perm', ['edit', 'export', 'admin'], '권한');
         $col = ['edit' => 'can_edit', 'export' => 'can_export', 'admin' => 'is_site_admin'][$perm];
         $value = !empty($b['value']) ? 1 : 0;

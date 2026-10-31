@@ -180,3 +180,9 @@ function audit(string $action, string $target = '', ?array $detail = null): void
         cm_log('error', 'audit: ' . $e->getMessage());
     }
 }
+
+/** 소그룹 인도자(D 등급)인가. 최고관리자로 지정되면 인도자 전용 제한을 받지 않는다. */
+function is_leader_user(array $u): bool
+{
+    return $u['status'] === '사용' && ($u['grade'] ?? null) === 'D' && (int)$u['is_super'] !== 1;
+}

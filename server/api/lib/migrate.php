@@ -66,7 +66,8 @@ function run_migrations(PDO $pdo, string $p, string $dir): int
         if ($n <= $current) continue;
         $statements = require $file;
         foreach ($statements as $sql) {
-            $pdo->exec(str_replace('{p}', $p, $sql));
+            if (is_callable($sql)) $sql($pdo, $p); // 문장 하나로 안 되는 변경은 함수로 적는다
+            else $pdo->exec(str_replace('{p}', $p, $sql));
         }
         $st = $pdo->prepare("INSERT INTO `{$p}meta` (k, v) VALUES ('schema_version', ?) ON DUPLICATE KEY UPDATE v = VALUES(v)");
         $st->execute([json_encode($n)]);

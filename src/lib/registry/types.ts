@@ -344,8 +344,8 @@ export interface Perms {
 // 회원 정보와 권한 확인은 서버(PHP)가 맡습니다. (src/lib/registry/auth.svelte.ts)
 export type UserStatus = '승인 대기' | '사용' | '정지';
 // A 전임 교역자(수정·출력·심방) > B 교적 관리(수정·출력) > C 열람
-export type Grade = 'A' | 'B' | 'C';
-export const GRADES: Grade[] = ['A', 'B', 'C'];
+export type Grade = 'A' | 'B' | 'C' | 'D'; // D = 소그룹 인도자 (자기 소그룹 출석 체크만)
+export const GRADES: Grade[] = ['A', 'B', 'C', 'D'];
 // 등급마다 할 수 있는 일 (최고관리자가 '관리자 › 사용자 설정 › 등급 설정'에서 바꿈)
 export interface GradeDef {
 	grade: Grade;

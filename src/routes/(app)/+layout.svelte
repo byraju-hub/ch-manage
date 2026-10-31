@@ -9,6 +9,7 @@
 	import { sync } from '#lib/registry/sync.svelte.ts';
 	import type { AppUser } from '#lib/registry/types.ts';
 	import { formatMobile } from '#lib/registry/derive.ts';
+	import LeaderAttendance from '#lib/components/LeaderAttendance.svelte';
 
 	let { children } = $props();
 
@@ -34,11 +35,13 @@
 	const toTop = () => window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 	const me = $derived(registry.me);
 	const mustChange = $derived(!!me && !!me.must_change_password);
+	// 소그룹 인도자(D 등급): 교적 자료를 받지 않고, 자기 소그룹 출석 화면만 본다
+	const isLeader = $derived(!!auth.user && auth.user.grade === 'D' && !auth.user.is_super && auth.user.status === '사용');
 	const unlocked = $derived(!!me && me.status === '사용' && !mustChange && registry.loaded);
 
 	// 로그인하면 내 등급으로 볼 수 있는 자료를 서버에서 받고, 로그아웃·세션 만료 때는 화면의 자료를 모두 지운다
 	$effect(() => {
-		const ready = !!auth.user && auth.user.status === '사용' && !auth.user.must_change_password;
+		const ready = !!auth.user && auth.user.status === '사용' && !auth.user.must_change_password && !isLeader;
 		if (ready && !registry.loaded && !registry.loading && !registry.loadError) void registry.load();
 		if (!auth.user && (registry.loaded || registry.loadError)) registry.unload();
 	});
@@ -58,7 +61,7 @@
 		window.addEventListener('click', outside);
 		window.addEventListener('keydown', touch);
 		const t = setInterval(() => {
-			if (unlocked && Date.now() - last > IDLE_MS) logout();
+			if ((unlocked || (isLeader && !mustChange)) && Date.now() - last > IDLE_MS) logout();
 		}, 30000);
 		return () => {
 			window.removeEventListener('click', touch);
@@ -273,6 +276,8 @@
 				</form>
 				<p><button type="button" class="ghost sm" onclick={logout}>로그아웃</button></p>
 			</div>
+		{:else if isLeader}
+			<LeaderAttendance onlogout={logout} />
 		{:else if me && me.status === '사용' && !mustChange && !registry.loaded}
 			<div class="card lock">
 				{#if registry.loadError}
