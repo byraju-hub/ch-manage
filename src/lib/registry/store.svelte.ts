@@ -7,6 +7,7 @@
 import type * as T from './types.ts';
 import { auth } from './auth.svelte.ts';
 import { sync } from './sync.svelte.ts';
+import { dm } from './dm.svelte.ts';
 import { CODECS, type Row } from './tables.ts';
 import { hrefTo } from './paths.ts';
 import { categoryPath, currentFaith, currentOffice, currentStatus, officeTitle, registeredOn } from './derive.ts';
@@ -108,6 +109,7 @@ class Registry {
 		sync.attach({
 			data: () => this.d,
 			reload: () => this.reload(),
+			refreshExtras: () => dm.refresh(),
 			setSaveError: (m) => { this.saveError = m; },
 			// 서버가 사진·로고를 파일로 저장한 뒤 돌려준 주소로 바꿈 (그 사이 또 바꾸지 않았을 때만)
 			applyFileUrl: (t, id, field, sent, url) => {
@@ -128,6 +130,7 @@ class Registry {
 			this.applyBootstrap(await auth.api('GET', '/bootstrap'));
 			this.loaded = true;
 			sync.start();
+			void dm.refresh(); // 부서 관리와 연결되어 있으면 연결 정보와 출석을 받는다
 		} catch (e) {
 			this.loadError = e instanceof Error ? e.message : '데이터를 불러오지 못했습니다.';
 		} finally {
@@ -147,6 +150,7 @@ class Registry {
 	/** 로그아웃·세션 만료: 화면에 남은 교인 정보를 모두 지운다 */
 	unload() {
 		sync.stop();
+		dm.clear();
 		this.d = emptyData();
 		this.loaded = false;
 		this.loadError = '';
@@ -450,13 +454,14 @@ class Registry {
 		this.save();
 	}
 	// 주일 오전예배: 입력한 기록만 쓴다. 기록이 없으면 출석으로 세지 않는다.
+	// 부서 관리와 연결된 학생은 부서 관리의 출석 기록을 우선한다.
 	attended(personId: string, sundayIso: string, _weeksFromEnd: number): boolean {
-		return this.d.attendance[sundayIso]?.[personId]?.present ?? false;
+		return dm.att[sundayIso]?.[personId] ?? this.d.attendance[sundayIso]?.[personId]?.present ?? false;
 	}
 	// 그 주일에 출석 기록이 하나라도 있는가. 없으면 '기록 없음'이지 모두 결석한 것이 아니다 (장기 결석 알림 등에서 구분)
 	hasWorshipRecord(sundayIso: string): boolean {
 		const m = this.d.attendance[sundayIso];
-		return !!m && Object.keys(m).length > 0;
+		return (!!m && Object.keys(m).length > 0) || Object.keys(dm.att[sundayIso] ?? {}).length > 0;
 	}
 	attendanceMark(personId: string, sundayIso: string) { return this.d.attendance[sundayIso]?.[personId]; }
 	setAttendance(sundayIso: string, personId: string, present: boolean, reason: string | null) {

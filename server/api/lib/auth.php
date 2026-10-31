@@ -162,15 +162,20 @@ function user_payload(array $u): array
     ];
 }
 
-/** 접속 기록. 기록이 실패해도 본 작업은 막지 않는다. */
+/** 접속 기록. 쓴 사람 이름은 로그인한 사용자에서 가져온다. 기록이 실패해도 본 작업은 막지 않되, 실패는 app.log 에 남긴다. */
 function audit(string $action, string $target = '', ?array $detail = null): void
 {
     try {
         session_boot();
+        $uid = $_SESSION['uid'] ?? null;
+        $who = $uid ? (string)val('SELECT name FROM ' . t('users') . ' WHERE id = ?', [$uid]) : '';
+        // 자세한 내용(detail)은 한 줄로 줄여 대상 칸에 붙인다 (접속 기록 표에는 대상 칸 하나뿐)
+        if ($detail) $target = trim($target . ' ' . json_encode($detail, JSON_UNESCAPED_UNICODE));
         q(
-            'INSERT INTO ' . t('access_log') . ' (user_id, action, target, detail) VALUES (?,?,?,?)',
-            [$_SESSION['uid'] ?? null, $action, mb_substr($target, 0, 100), $detail === null ? null : json_encode($detail, JSON_UNESCAPED_UNICODE)]
+            'INSERT INTO ' . t('access_log') . ' (id, user_id, who, action, target) VALUES (?,?,?,?,?)',
+            [new_uuid(), $uid, mb_substr($who, 0, 50), mb_substr($action, 0, 40), mb_substr($target, 0, 100)]
         );
-    } catch (Throwable) {
+    } catch (Throwable $e) {
+        cm_log('error', 'audit: ' . $e->getMessage());
     }
 }

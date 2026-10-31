@@ -18,6 +18,7 @@ require __DIR__ . '/router.php';
 require __DIR__ . '/util.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/data.php';
+require __DIR__ . '/dm.php';
 
 /** 설치 때 만들어지는 설정(DB 접속 정보 등). 설치 전이면 null. */
 function cm_config(): ?array

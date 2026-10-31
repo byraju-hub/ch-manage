@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { hrefTo } from '#lib/registry/paths.ts';
+	import { dm } from '#lib/registry/dm.svelte.ts';
+	import { recentSundays } from '#lib/registry/weeks.ts';
 	// 교적 카드: 기본 정보 · 세대 · 신급/직분 · 재적 이력 · 소속 · 교육 · 심방 · 메모/동의 · 변경 이력
 	import { page } from '$app/state';
 	import { registry } from '#lib/registry/store.svelte.ts';
@@ -20,6 +22,9 @@
 	const today = new Date().toISOString().slice(0, 10);
 
 	// '심방' 탭은 A 등급만 보임
+	// 부서 관리(dep-manage)와 연결된 교인이면 부서·학년과 최근 출석을 보여 준다
+	const dmInfo = $derived(p ? dm.links[p.id] : undefined);
+	const dmWeeks = $derived(p ? recentSundays(8).map((d) => ({ d, v: dm.att[d]?.[p.id] })) : []);
 	const tabs = $derived(['기본 정보', '세대', '신급·직분', '재적 이력', '소속', '교육', ...(registry.perms.visit ? ['심방'] : []), '메모·동의', '변경 이력']);
 	let tab = $state('기본 정보');
 	let editing = $state(false);
@@ -152,6 +157,15 @@
 						<tr><th>이메일</th><td>{v(p.email)}</td><th>이전 출석 교회</th><td>{v(p.previous_church)}</td></tr>
 						<tr><th>대가족</th><td>{#if bigHead}세대주 <a href={hrefTo(`/${bigHead.id}`)}>{bigHead.name}</a> · {v(p.big_family_relation)}{:else}-{/if}</td><th>신급 확인일</th><td>{v(p.faith_checked_on)}</td></tr>
 						<tr><th>차량 번호</th><td colspan="3">{v(p.car_number)}</td></tr>
+						{#if dmInfo}
+							<tr><th>부서 관리</th><td colspan="3">
+								{#if dmInfo.kind === 'student'}{dmInfo.dept}{dmInfo.grade ? ` · ${dmInfo.grade}` : ''} 학생{:else}{dmInfo.teacherDept} 교사{/if}
+								{#if dmInfo.teacherDept && dmInfo.kind === 'student'} · {dmInfo.teacherDept} 교사{/if}
+								<span class="muted" style="margin-left:.6rem">최근 8주 출석</span>
+								<span class="dm-att">{#each dmWeeks as w (w.d)}<span class:on={w.v === true} class:off={w.v === false} title="{w.d} {w.v === undefined ? '기록 없음' : w.v ? '출석' : '결석'}">{w.v === undefined ? '·' : w.v ? '●' : '○'}</span>{/each}</span>
+								<small class="muted" style="margin-left:.6rem">부서 관리의 출석입니다. 이름·연락처 등은 여기서 고치면 부서 관리에도 맞춰집니다.</small>
+							</td></tr>
+						{/if}
 						<tr><th>비고</th><td colspan="3">{v(p.note)}</td></tr>
 					</tbody>
 				</table>
@@ -387,4 +401,7 @@
 
 <style>
 	.mugshot { width: 56px; height: 56px; border-radius: 16px; object-fit: cover; border: 1px solid var(--line-strong); }
+	.dm-att { letter-spacing: 0.25em; font-size: 0.9rem; }
+	.dm-att .on { color: #14b4ae; }
+	.dm-att .off { color: #c9ced9; }
 </style>

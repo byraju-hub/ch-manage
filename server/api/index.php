@@ -21,7 +21,7 @@ if (!cm_config()) {
 }
 
 require __DIR__ . '/lib/migrate.php';
-foreach (['auth', 'users', 'data'] as $c) {
+foreach (['auth', 'users', 'data', 'dm'] as $c) {
     require __DIR__ . '/controllers/' . $c . '.php';
 }
 

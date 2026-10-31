@@ -41,3 +41,9 @@ function temp_password(int $n = 10): string
     for ($i = 0; $i < $n; $i++) $s .= $chars[random_int(0, strlen($chars) - 1)];
     return $s;
 }
+
+/** 새 UUID(v4). 교인 영역의 id 와 같은 모양 */
+function new_uuid(): string
+{
+    return sprintf('%08x-%04x-4%03x-8%03x-%012x', random_int(0, 0xffffffff), random_int(0, 0xffff), random_int(0, 0xfff), random_int(0, 0xfff), random_int(0, 0xffffffffffff));
+}

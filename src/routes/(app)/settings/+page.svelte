@@ -9,6 +9,8 @@
 	import YearSettingsPanel from '#lib/components/YearSettingsPanel.svelte';
 	import BasicSettingsPanel from '#lib/components/BasicSettingsPanel.svelte';
 	import BackupPanel from '#lib/components/BackupPanel.svelte';
+	import DmLinkPanel from '#lib/components/DmLinkPanel.svelte';
+	import { dm } from '#lib/registry/dm.svelte.ts';
 	import CodesPanel from '#lib/components/CodesPanel.svelte';
 	import { registry } from '#lib/registry/store.svelte.ts';
 	import PersonPicker from '#lib/components/PersonPicker.svelte';
@@ -17,10 +19,12 @@
 
 	const GROUPS = [
 		{ title: '교회 설정', tabs: ['기본 설정', '연간 설정', '교회 조직표', '소그룹 편성'] },
-		{ title: '프로그램 설정', tabs: ['교인구분', '코드표', '확인 목록', '백업'] }
+		{ title: '프로그램 설정', tabs: ['교인구분', '코드표', '확인 목록', '백업', '부서 관리 연결'] }
 	];
 	const tab = $derived(GROUPS.some((g) => g.tabs.includes(page.url.searchParams.get('tab') ?? '')) ? page.url.searchParams.get('tab')! : '기본 설정');
 	const group = $derived(GROUPS.find((g) => g.tabs.includes(tab))!);
+	// '부서 관리 연결'은 부서 관리(dep-manage)가 같은 DB 에 있을 때(또는 구조가 달라 확인이 필요할 때) 최고관리자에게만 보인다.
+	const shownTabs = $derived(group.tabs.filter((t) => t !== '부서 관리 연결' || t === tab || (registry.isSuper && (dm.available || dm.reason === 'incompatible'))));
 	function setTab(t: string) {
 		msg = '';
 		goto(hrefTo(`/settings?tab=${encodeURIComponent(t)}`), { replaceState: true, reset: false });
@@ -72,7 +76,7 @@
 {#if !registry.perms.admin}
 	<div class="warn">사이트 관리자 권한이 필요합니다. (최고관리자에게 사이트 관리자 권한을 받아야 합니다)</div>
 {:else}
-	<div class="tabs">{#each group.tabs as t}<button class:on={tab === t} onclick={() => setTab(t)}>{registry.tr(t)}</button>{/each}</div>
+	<div class="tabs">{#each shownTabs as t}<button class:on={tab === t} onclick={() => setTab(t)}>{registry.tr(t)}</button>{/each}</div>
 	{#if msg}<div class="warn">{msg}</div>{/if}
 
 	{#if tab === '교인구분'}
@@ -198,6 +202,8 @@
 		<CandidatesPanel />
 	{:else if tab === '백업'}
 		<BackupPanel />
+	{:else if tab === '부서 관리 연결'}
+		{#if registry.isSuper}<DmLinkPanel />{:else}<div class="warn">부서 관리 연결은 최고관리자만 할 수 있습니다.</div>{/if}
 	{:else if tab === '연간 설정'}
 		<YearSettingsPanel />
 	{:else if tab === '교회 조직표'}

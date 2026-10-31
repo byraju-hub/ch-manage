@@ -18,6 +18,8 @@ export interface SyncHost {
 	data(): Data;
 	reload(): Promise<void>;
 	setSaveError(msg: string): void;
+	/** 1분마다 함께 확인할 것 (부서 관리의 출석 등, 교적 자료의 버전과 따로 바뀌는 것) */
+	refreshExtras?(): Promise<void>;
 	/** 서버가 사진·로고를 파일로 저장한 뒤 돌려준 주소로 화면 데이터를 바꿈 */
 	applyFileUrl(t: string, id: string, field: string, sent: unknown, url: string): void;
 }
@@ -101,6 +103,7 @@ export class Sync {
 		try {
 			const v = (await auth.api<{ version: number }>('GET', '/version')).version;
 			if (v !== this.version && !this.hasPending()) await this.host.reload();
+			await this.host.refreshExtras?.();
 		} catch { /* 연결이 잠깐 끊긴 것: 다음에 다시 확인 */ }
 	}
 

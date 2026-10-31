@@ -148,7 +148,7 @@
 	]);
 	// 관리자 메뉴를 누르면 첫 항목(교회 설정 › 기본 설정)으로
 	const path = $derived(stripBase(page.url.pathname));
-	const PROGRAM_TABS =['교인구분', '코드표', '확인 목록', '백업'];
+	const PROGRAM_TABS =['교인구분', '코드표', '확인 목록', '백업', '부서 관리 연결'];
 	const adminMenu: Item[] = $derived([
 		{ href: '/settings', label: '교회 설정', hint: `기본 · 연간 · 조직표 · ${registry.t2}` },
 		{ href: '/admin', label: '사용자 설정', hint: '목록 · 가입 · 등급 · 기록' },

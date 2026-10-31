@@ -21,10 +21,12 @@ route('POST', '/sync', function () {
     $ops = body()['ops'] ?? null;
     if (!is_array($ops) || count($ops) > DATA_MAX_OPS) json_fail('invalid', '저장 요청이 올바르지 않습니다.', 422);
     try {
-        json_out(data_apply($u, $ops));
+        $res = data_apply($u, $ops);
     } catch (SyncError $e) {
         json_fail('sync_rejected', ($e->table !== '' ? "[{$e->table}] " : '') . $e->getMessage(), 422);
     }
+    dm_after_sync($ops); // 부서 관리와 연결된 교인이면 바뀐 인적사항을 부서 관리에도 맞춘다 (실패해도 저장은 그대로)
+    json_out($res);
 });
 
 function data_serve_image(?string $rel): never
