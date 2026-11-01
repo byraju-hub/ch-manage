@@ -2,7 +2,7 @@
 	import { hrefTo } from '#lib/registry/paths.ts';
 	// 관리자 › 교회 설정 › 기본 설정: 교회 기본 정보 · 로고 · 직인 · 증명서 양식
 	import { registry } from '#lib/registry/store.svelte.ts';
-	import { UNIT1_OPTIONS, UNIT2_OPTIONS, certNo, shrinkImage, type CertForm, type ChurchInfo } from '#lib/registry/site-settings.ts';
+	import { UNIT1_OPTIONS, UNIT2_OPTIONS, certNo, shrinkImage, squareIcon, type CertForm, type ChurchInfo } from '#lib/registry/site-settings.ts';
 
 	let info = $state<ChurchInfo>(structuredClone($state.snapshot(registry.churchInfo)) as ChurchInfo);
 	let cert = $state<CertForm>(structuredClone($state.snapshot(registry.certForm)) as CertForm);
@@ -36,6 +36,25 @@
 		} catch {
 			err = '그림을 읽지 못했습니다.';
 		}
+	}
+	async function pickFavicon(e: Event) {
+		const f = (e.currentTarget as HTMLInputElement).files?.[0];
+		(e.currentTarget as HTMLInputElement).value = '';
+		if (!f) return;
+		if (!/^image\//.test(f.type)) { err = '그림 파일(PNG · JPG)을 골라 주세요.'; return; }
+		try {
+			info.favicon = await squareIcon(f);
+			err = '';
+			registry.saveSite({ churchInfo: info }, '기본 설정 · 탭 아이콘 올림');
+			msg = '탭 아이콘을 올렸습니다. 브라우저가 이전 아이콘을 기억하고 있으면 Ctrl+F5 로 새로고침해 주세요.';
+		} catch {
+			err = '그림을 읽지 못했습니다.';
+		}
+	}
+	function clearFavicon() {
+		info.favicon = null;
+		registry.saveSite({ churchInfo: info }, '기본 설정 · 탭 아이콘 지움');
+		msg = '탭 아이콘을 기본(푸른 배경의 십자가)으로 되돌렸습니다.';
 	}
 	// 도로명 주소 검색: 고르면 주소가 들어가고, 이어서 상세주소(층·호)를 적을 수 있게 커서를 둠
 	let addrInput = $state<HTMLInputElement>();
@@ -122,6 +141,21 @@
 		<p class="muted" style="font-size:.8rem;margin:.5rem 0 0">배경이 투명한 PNG가 가장 깔끔합니다. 올린 그림은 서버에 저장됩니다. 직인은 증명서를 만들 수 있는 사람(내려받기 권한)에게만 보이고, 그림 크기는 자동으로 줄어듭니다.</p>
 	</section>
 </div>
+
+<section class="card">
+	<div class="card-head"><h2>탭 아이콘 (파비콘)</h2><span class="sub">인터넷 창 탭과 즐겨찾기에 나오는 작은 그림입니다</span></div>
+	<div class="row" style="align-items:center;gap:1rem">
+		<div class="img-box"><img src={info.favicon || hrefTo('/apple-touch-icon.png')} alt="탭 아이콘" width="64" height="64" style="border-radius:12px" /></div>
+		<div>
+			<div class="row">
+				<label class="btn ghost sm file-btn">아이콘 올리기<input type="file" accept="image/*" disabled={!can} onchange={pickFavicon} /></label>
+				{#if info.favicon}<button type="button" class="ghost sm" onclick={clearFavicon} disabled={!can}>기본 아이콘으로</button>{/if}
+				<span class="muted" style="font-size:.8rem">{info.favicon ? '올린 아이콘을 쓰는 중' : '기본 아이콘(푸른 배경의 십자가)을 쓰는 중'}</span>
+			</div>
+			<p class="muted" style="font-size:.8rem;margin:.5rem 0 0">정사각형 그림이 가장 좋습니다. 직사각형이면 가운데를 정사각형으로 잘라 씁니다. 로고 그림을 그대로 올려도 됩니다.</p>
+		</div>
+	</div>
+</section>
 
 <section class="card">
 	<div class="card-head"><h2>증명서 양식</h2><span class="sub">교인증명서 · 세례증명서</span></div>

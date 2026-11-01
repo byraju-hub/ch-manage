@@ -448,6 +448,7 @@ function data_read_site(array $user): array
     if (!$r) return [];
     $ci = json_decode((string)$r['church_info'], true) ?: [];
     $ci['logo'] = data_file_url('logo', $r['logo_path']);
+    $ci['favicon'] = data_file_url('favicon', $r['favicon_path'] ?? null);
     // 직인은 증명서를 만들 수 있는 사람(내려받기 권한)에게만 보인다.
     $ci['seal'] = perms_of($user)['export'] ? data_file_url('seal', $r['seal_path']) : null;
     return [[
@@ -467,11 +468,11 @@ function data_write_site(string $id, array $set, array &$ctx): void
         if (!in_array($k, ['churchInfo', 'certForm', 'codes', 'backup'], true)) throw new SyncError("알 수 없는 설정 칸: {$k}", 'site', $id);
         if (!is_array($v)) throw new SyncError("{$k}: 값이 올바르지 않습니다.", 'site', $id);
         if ($k === 'churchInfo') {
-            foreach (['logo' => 'logo_path', 'seal' => 'seal_path'] as $f => $col) {
+            foreach (['logo' => 'logo_path', 'seal' => 'seal_path', 'favicon' => 'favicon_path'] as $f => $col) {
                 if (!array_key_exists($f, $v)) continue;
                 $val = $v[$f];
                 if (is_string($val) && str_starts_with($val, 'data:')) {
-                    $new = data_save_image($val, $f, 1_000_000);
+                    $new = data_save_image($val, $f, $f === 'favicon' ? 200_000 : 1_000_000);
                     if ($cur[$col] && $cur[$col] !== $new) data_delete_file($cur[$col]);
                     $upd[$col] = $new;
                     $ctx['files']["site|1|{$f}"] = data_file_url($f, $new);

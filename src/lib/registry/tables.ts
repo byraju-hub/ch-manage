@@ -83,7 +83,7 @@ export const CODECS: Codec[] = [
 		load: (d, rows) => {
 			const r = rows[0] as Loose | undefined;
 			if (!r) return;
-			d.churchInfo = { ...r.churchInfo, logo: fileUrl(r.churchInfo?.logo), seal: fileUrl(r.churchInfo?.seal) };
+			d.churchInfo = { ...r.churchInfo, logo: fileUrl(r.churchInfo?.logo), seal: fileUrl(r.churchInfo?.seal), favicon: fileUrl(r.churchInfo?.favicon) };
 			d.certForm = r.certForm; d.codes = r.codes; d.backup = r.backup;
 		}
 	},

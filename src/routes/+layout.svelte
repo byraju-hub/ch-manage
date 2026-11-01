@@ -23,6 +23,6 @@
 	});
 </script>
 
-<svelte:head><title>{registry.churchInfo.name} 교적 관리</title><link rel="icon" type="image/png" sizes="32x32" href={hrefTo('/favicon-32.png')} /><link rel="apple-touch-icon" href={hrefTo('/apple-touch-icon.png')} /></svelte:head>
+<svelte:head><title>{registry.churchInfo.name} 교적 관리</title><link rel="icon" type="image/png" href={registry.churchInfo.favicon || hrefTo('/api/v1/files/favicon')} /><link rel="apple-touch-icon" href={registry.churchInfo.favicon || hrefTo('/api/v1/files/favicon')} /></svelte:head>
 
 {@render children()}

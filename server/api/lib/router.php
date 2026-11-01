@@ -4,14 +4,14 @@ declare(strict_types=1);
 // 아주 작은 라우터. route('GET', '/users/{id}', fn(int $id) => ...) 처럼 등록하고 dispatch() 가 맞는 것을 실행한다.
 //   {id}    → 숫자 (정수로 넘겨준다)
 //   {grade} → A, B, C, D 중 하나 (문자열로 넘겨준다)
-//   {uuid}  → UUID 모양 글자 · {name} → logo 또는 seal
+//   {uuid}  → UUID 모양 글자 · {name} → logo, seal 또는 favicon
 
 /** @var array<int, array{string, string, callable}> */
 $GLOBALS['cm_routes'] = [];
 
 function route(string $method, string $pattern, callable $handler): void
 {
-    $rx = preg_replace(['/\{id\}/', '/\{grade\}/', '/\{uuid\}/', '/\{name\}/'], ['(\d+)', '([ABCD])', '([0-9a-fA-F-]{36})', '(logo|seal)'], $pattern);
+    $rx = preg_replace(['/\{id\}/', '/\{grade\}/', '/\{uuid\}/', '/\{name\}/'], ['(\d+)', '([ABCD])', '([0-9a-fA-F-]{36})', '(logo|seal|favicon)'], $pattern);
     $GLOBALS['cm_routes'][] = [$method, '#^' . $rx . '$#', $handler];
 }
 
@@ -60,6 +60,6 @@ function guard_leader(string $method, string $path): void
     if (preg_match('#^/auth/#', $path) || $path === '/system/status') return;
     $u = current_user();
     if (!$u || !is_leader_user($u)) return;
-    if (preg_match('#^/leader/#', $path) || ($method === 'GET' && $path === '/files/logo')) return;
+    if (preg_match('#^/leader/#', $path) || ($method === 'GET' && ($path === '/files/logo' || $path === '/files/favicon'))) return;
     json_fail('forbidden', '소그룹 인도자는 소그룹 출석 화면만 쓸 수 있습니다.', 403);
 }

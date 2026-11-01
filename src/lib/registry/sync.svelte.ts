@@ -161,7 +161,7 @@ export class Sync {
 				for (const [key, url] of Object.entries(res.files ?? {})) {
 					const [t, id, field] = key.split('|');
 					const p = batch.find((x) => x.op.t === t && x.op.id === id);
-					const sent = p?.op.set?.[field === 'logo' || field === 'seal' ? 'churchInfo' : field];
+					const sent = p?.op.set?.[field === 'logo' || field === 'seal' || field === 'favicon' ? 'churchInfo' : field];
 					this.host.applyFileUrl(t, id, field, sent, url);
 					if (p?.ser) {
 						// 파일로 저장된 칸은 서버가 준 주소를 '서버와 같은 값'으로 기록한다

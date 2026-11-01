@@ -48,8 +48,29 @@ route('GET', '/files/photo/{uuid}', function (string $id) {
     data_serve_image(val('SELECT photo FROM ' . t('people') . ' WHERE id = ?', [strtolower($id)]));
 });
 
+/** 교회가 올린 탭 아이콘. 없으면 기본 아이콘(사이트 폴더의 favicon-32.png)으로 보낸다. */
+function serve_favicon(): never
+{
+    $rel = val('SELECT favicon_path FROM ' . t('site_settings') . ' WHERE id = 1');
+    if ($rel && !str_contains((string)$rel, '..') && is_file(data_upload_dir() . '/' . $rel)) {
+        $f = data_upload_dir() . '/' . $rel;
+        $mime = ['png' => 'image/png', 'jpg' => 'image/jpeg', 'webp' => 'image/webp'][strtolower(pathinfo($f, PATHINFO_EXTENSION))] ?? 'image/png';
+        header('Content-Type: ' . $mime);
+        header('Content-Length: ' . filesize($f));
+        header('Cache-Control: public, max-age=3600');
+        header('X-Content-Type-Options: nosniff');
+        readfile($f);
+        exit;
+    }
+    $base = rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
+    header('Cache-Control: public, max-age=3600');
+    header('Location: ' . $base . '/favicon-32.png', true, 302);
+    exit;
+}
+
 // 교회 로고, 직인. 직인은 증명서를 만들 수 있는 사람(내려받기 권한)만.
 route('GET', '/files/{name}', function (string $name) {
+    if ($name === 'favicon') serve_favicon(); // 탭 아이콘은 로그인 화면에서도 보여야 하므로 로그인 없이 열린다
     $u = require_user();
     if ($name === 'seal' && !perms_of($u)['export']) json_fail('forbidden', '이 작업을 할 권한이 없습니다.', 403);
     data_serve_image(val('SELECT ' . ($name === 'seal' ? 'seal_path' : 'logo_path') . ' FROM ' . t('site_settings') . ' WHERE id = 1'));

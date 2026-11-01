@@ -115,7 +115,7 @@ class Registry {
 			applyFileUrl: (t, id, field, sent, url) => {
 				const full = hrefTo('/api/v1' + url);
 				if (t === 'people') { const p = this.d.people.find((x) => x.id === id); if (p && p.photo === sent) p.photo = full; }
-				else if (t === 'site' && this.d.churchInfo) { if (field === 'logo') this.d.churchInfo.logo = full; else if (field === 'seal') this.d.churchInfo.seal = full; }
+				else if (t === 'site' && this.d.churchInfo) { if (field === 'logo') this.d.churchInfo.logo = full; else if (field === 'seal') this.d.churchInfo.seal = full; else if (field === 'favicon') this.d.churchInfo.favicon = full; }
 			}
 		});
 	}
