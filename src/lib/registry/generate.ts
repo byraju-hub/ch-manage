@@ -1,4 +1,4 @@
-// 실제 교회 규모(재적 723명, 주일 출석 약 430명)의 가상 교적 데이터를 만듭니다.
+// 실제 교회 규모(재적 약 357명, 전체 약 420명)의 가상 교적 데이터를 만듭니다.
 // - 이름·전화·주소는 모두 만들어 낸 값이며 실제 교인 자료를 쓰지 않습니다.
 // - 같은 시드로 만들기 때문에 열 때마다 같은 사람들이 나옵니다. (날짜는 오늘 기준으로 맞춤)
 // - 공동체·소그룹 구성(3개 공동체, 소그룹 27개 + 돌봄방)만 2026년 편성표의 구조를 따릅니다.
@@ -357,10 +357,10 @@ export function generate(reservedNames: string[] = [], opts: { targetActive?: nu
 	const mainHouseholds = households.slice(mainStart);
 	// 새가족: 최근 60일 안에 등록 10세대, 그 전 1년 안에 등록 30세대
 	const freshMembers: T.Person[] = [];
-	for (let i = 0; i < 40; i++) {
+	for (let i = 0; i < 20; i++) {
 		const hb = chance(0.2) ? ri(1960, 1975) : ri(1976, 2002);
 		const k: Kind = hb >= 1990 ? pick(['single', 'single', 'couple', 'couple_kids']) : pick(['couple_kids', 'couple', 'single']);
-		const r = makeHousehold(hb, k, i < 10 ? 'recent' : 'year');
+		const r = makeHousehold(hb, k, i < 5 ? 'recent' : 'year');
 		freshMembers.push(...r.members.map((m) => m.p));
 	}
 	// 새가족 인도자·동의 기록·새가족 교육
@@ -386,7 +386,7 @@ export function generate(reservedNames: string[] = [], opts: { targetActive?: nu
 
 	// 보류(소식이 뜸한 교인)
 	const activeAdults = people.filter((p) => ageAt(birthOf(p)) >= 25 && !freshMembers.includes(p));
-	for (let i = 0; i < 30; i++) {
+	for (let i = 0; i < 15; i++) {
 		const p = pick(activeAdults);
 		if (statusEvents.some((e) => e.person_id === p.id && e.kind === '보류')) continue;
 		// 보류일은 등록일보다 뒤여야 함 (이력은 날짜순으로 계산하므로)
@@ -417,10 +417,10 @@ export function generate(reservedNames: string[] = [], opts: { targetActive?: nu
 			join(h, p, '본인');
 		}
 	};
-	gone('전출', 34); gone('별세', 8); gone('제적', 14); gone('보관', 12);
+	gone('전출', 17); gone('별세', 4); gone('제적', 7); gone('보관', 6);
 
 	// 미등록·타교인: 예배에 나오지만 아직 등록하지 않았거나 다른 교회 교인
-	for (let i = 0; i < 30; i++) {
+	for (let i = 0; i < 15; i++) {
 		const hb = ri(1950, 2006);
 		const age = ageAt(hb);
 		const p = mkPerson({ surname: pick(SUR), gender: chance(0.5) ? 'M' : 'F', birth: hb, hasReg: false, marital: age >= 30 ? '기혼' : null });
