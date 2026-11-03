@@ -11,11 +11,20 @@
 	let err = $state('');
 	const can = $derived(registry.canSetup);
 
+	// 그림(로고·직인·탭 아이콘)은 이 화면의 복사본이 아니라 '서버와 맞춰진 값'(registry)을 기준으로 보낸다.
+	// 복사본에는 방금 올린 큰 그림(데이터)이 그대로 남아 있어서, 다른 칸을 저장할 때 다시 보내면 한 번에 보낼 수 있는 크기를 넘는다.
+	type ImgKind = 'logo' | 'seal' | 'favicon';
+	function payload(change?: { kind: ImgKind; value: string | null }): ChurchInfo {
+		const base = registry.churchInfo;
+		const out = { ...info, logo: base.logo, seal: base.seal, favicon: base.favicon ?? null } as ChurchInfo;
+		if (change) out[change.kind] = change.value;
+		return out;
+	}
 	function saveInfo() {
 		if (!info.name.trim()) { err = '교회 이름을 적어 주세요.'; return; }
 		if (!info.unit1.trim() || !info.unit2.trim()) { err = '모임 이름(1단계 · 2단계)을 적어 주세요.'; return; }
 		err = '';
-		registry.saveSite({ churchInfo: info }, '기본 설정 · 교회 정보 저장');
+		registry.saveSite({ churchInfo: payload() }, '기본 설정 · 교회 정보 저장');
 		msg = '교회 정보를 저장했습니다. 화면 위쪽 이름과 문서에 바로 반영됩니다.';
 	}
 	function saveCert() {
@@ -29,9 +38,10 @@
 		if (!f) return;
 		if (!/^image\//.test(f.type)) { err = '그림 파일(PNG · JPG)을 골라 주세요.'; return; }
 		try {
-			info[kind] = await shrinkImage(f, kind === 'logo' ? 900 : 500);
+			const img = await shrinkImage(f, kind === 'logo' ? 900 : 500);
+			info[kind] = img; // 이 화면에 바로 보이게
 			err = '';
-			registry.saveSite({ churchInfo: info }, `기본 설정 · ${kind === 'logo' ? '로고' : '직인'} 올림`);
+			registry.saveSite({ churchInfo: payload({ kind, value: img }) }, `기본 설정 · ${kind === 'logo' ? '로고' : '직인'} 올림`);
 			msg = `${kind === 'logo' ? '로고' : '직인'}를 올렸습니다.`;
 		} catch {
 			err = '그림을 읽지 못했습니다.';
@@ -43,9 +53,10 @@
 		if (!f) return;
 		if (!/^image\//.test(f.type)) { err = '그림 파일(PNG · JPG)을 골라 주세요.'; return; }
 		try {
-			info.favicon = await squareIcon(f);
+			const img = await squareIcon(f);
+			info.favicon = img;
 			err = '';
-			registry.saveSite({ churchInfo: info }, '기본 설정 · 탭 아이콘 올림');
+			registry.saveSite({ churchInfo: payload({ kind: 'favicon', value: img }) }, '기본 설정 · 탭 아이콘 올림');
 			msg = '탭 아이콘을 올렸습니다. 브라우저가 이전 아이콘을 기억하고 있으면 Ctrl+F5 로 새로고침해 주세요.';
 		} catch {
 			err = '그림을 읽지 못했습니다.';
@@ -53,7 +64,7 @@
 	}
 	function clearFavicon() {
 		info.favicon = null;
-		registry.saveSite({ churchInfo: info }, '기본 설정 · 탭 아이콘 지움');
+		registry.saveSite({ churchInfo: payload({ kind: 'favicon', value: null }) }, '기본 설정 · 탭 아이콘 지움');
 		msg = '탭 아이콘을 기본(푸른 배경의 십자가)으로 되돌렸습니다.';
 	}
 	// 도로명 주소 검색: 고르면 주소가 들어가고, 이어서 상세주소(층·호)를 적을 수 있게 커서를 둠
@@ -75,7 +86,7 @@
 	}
 	function clearImg(kind: 'logo' | 'seal') {
 		info[kind] = null;
-		registry.saveSite({ churchInfo: info }, `기본 설정 · ${kind === 'logo' ? '로고' : '직인'} 지움`);
+		registry.saveSite({ churchInfo: payload({ kind, value: null }) }, `기본 설정 · ${kind === 'logo' ? '로고' : '직인'} 지움`);
 		msg = `${kind === 'logo' ? '로고' : '직인'}를 지우고 기본으로 되돌렸습니다.`;
 	}
 </script>
@@ -124,7 +135,7 @@
 <div class="dash-grid even">
 	<section class="card">
 		<div class="card-head"><h2>교회 로고</h2><span class="sub">증명서 아래 교회 이름 자리에 들어갑니다</span></div>
-		<div class="img-box"><img src={info.logo || hrefTo('/church-logo.png')} alt="교회 로고" style="max-height:70px" /></div>
+		<div class="img-box"><img src={info.logo || hrefTo('/church-logo.png') + '?v=2'} alt="교회 로고" style="max-height:70px" /></div>
 		<div class="row" style="margin-top:.7rem">
 			<label class="btn ghost sm file-btn">로고 올리기<input type="file" accept="image/*" disabled={!can} onchange={(e) => pick(e, 'logo')} /></label>
 			{#if info.logo}<button type="button" class="ghost sm" onclick={() => clearImg('logo')} disabled={!can}>기본 로고로</button>{/if}
@@ -143,9 +154,9 @@
 </div>
 
 <section class="card">
-	<div class="card-head"><h2>탭 아이콘 (파비콘)</h2><span class="sub">인터넷 창 탭과 즐겨찾기에 나오는 작은 그림입니다</span></div>
+	<div class="card-head"><h2>탭 아이콘 (파비콘)</h2><span class="sub">인터넷 창 탭, 즐겨찾기, 화면 왼쪽 위 제목 옆에 나오는 작은 그림입니다</span></div>
 	<div class="row" style="align-items:center;gap:1rem">
-		<div class="img-box"><img src={info.favicon || hrefTo('/apple-touch-icon.png')} alt="탭 아이콘" width="64" height="64" style="border-radius:12px" /></div>
+		<div class="img-box"><img src={info.favicon || hrefTo('/apple-touch-icon.png') + '?v=2'} alt="탭 아이콘" width="64" height="64" style="border-radius:12px" /></div>
 		<div>
 			<div class="row">
 				<label class="btn ghost sm file-btn">아이콘 올리기<input type="file" accept="image/*" disabled={!can} onchange={pickFavicon} /></label>

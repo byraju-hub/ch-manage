@@ -36,7 +36,8 @@ class Auth {
 	private csrf = '';
 
 	/** 서버 호출. 실패하면 ApiError. 로그인이 풀렸으면(401) 화면도 로그아웃 상태로 */
-	async api<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
+	// opts.keep: 로그인이 풀려(401) 있어도 화면을 로그인 화면으로 바꾸지 않는다. (입력하던 내용을 지키려고, 호출한 쪽이 다시 로그인을 받는다)
+	async api<T = unknown>(method: string, path: string, body?: unknown, opts?: { keep?: boolean }): Promise<T> {
 		let res: Response;
 		try {
 			res = await fetch(apiBase() + path, {
@@ -53,7 +54,7 @@ class Auth {
 		try { raw = await res.text(); j = JSON.parse(raw); } catch { /* JSON 이 아닌 응답: 호스팅의 보안 장치나 서버 오류 */ }
 		if (!j || !j.ok) {
 			const code = j?.error?.code ?? 'server_error';
-			if (res.status === 401 && !path.startsWith('/auth/')) this.clear();
+			if (res.status === 401 && !path.startsWith('/auth/') && !opts?.keep) this.clear();
 			// 서버가 보낸 문장이 없으면(호스팅이 먼저 막은 경우 등) 번호를 보여 줘서 원인을 찾기 쉽게 한다
 			const why = res.status === 413 || res.status === 404 && path === '/sync' ? ' (한 번에 보내는 양이 호스팅 한도를 넘었을 수 있습니다)' : '';
 			throw new ApiError(code, j?.error?.message ?? `서버 응답을 읽지 못했습니다. (HTTP ${res.status})${why}`, res.status);

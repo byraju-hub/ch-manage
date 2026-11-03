@@ -340,7 +340,7 @@
 					<p class="cert-date">{todayKo}</p>
 					<!-- 교회 이름 자리에 교회 로고 -->
 					<!-- 직인: 교적 관리에서 바로 뽑을 때는 늘, 홈페이지 신청은 관리자가 승인한 뒤에만 -->
-					<p class="cert-sign"><img class="cert-logo" src={registry.churchInfo.logo || hrefTo('/church-logo.png')} alt="{registry.churchInfo.denomination} {CHURCH}" width="360" height="148" style="width:56mm;height:auto" /><br />{registry.churchInfo.pastorLabel} <b>{pastor}</b> <span class="seal-wrap">(인){#if sealOk}<img class="seal-img" src={sealSrc} onerror={() => (sealFail = true)} alt="교회 직인" style="width:{cf.sealSize}mm;height:{cf.sealSize}mm" />{/if}</span></p>
+					<p class="cert-sign"><img class="cert-logo" src={registry.churchInfo.logo || hrefTo('/church-logo.png') + '?v=2'} alt="{registry.churchInfo.denomination} {CHURCH}" width="360" height="148" style="width:56mm;height:auto" /><br />{registry.churchInfo.pastorLabel} <b>{pastor}</b> <span class="seal-wrap">(인){#if sealOk}<img class="seal-img" src={sealSrc} onerror={() => (sealFail = true)} alt="교회 직인" style="width:{cf.sealSize}mm;height:{cf.sealSize}mm" />{/if}</span></p>
 					{#if cf.footNote}<p class="foot-note" style="text-align:center;border:0">{cf.footNote}</p>{/if}
 				</div>
 
@@ -368,7 +368,7 @@
 					<p class="rcpt-won">일금 <b>{wonKo(donTotal)}</b>원정 (₩{donTotal.toLocaleString()})</p>
 					<p class="rcpt-body">위와 같이 기부금을 기부받았음을 증명합니다.</p>
 					<p class="cert-date">{todayKo}</p>
-					<p class="cert-sign"><img class="cert-logo" src={registry.churchInfo.logo || hrefTo('/church-logo.png')} alt="{registry.churchInfo.denomination} {CHURCH}" width="360" height="148" style="width:56mm;height:auto" /><br />{registry.churchInfo.pastorLabel} <b>{pastor}</b> <span class="seal-wrap">(인)<img class="seal-img" src={sealSrc} onerror={() => (sealFail = true)} alt="교회 직인" style="width:{cf.sealSize}mm;height:{cf.sealSize}mm" /></span></p>
+					<p class="cert-sign"><img class="cert-logo" src={registry.churchInfo.logo || hrefTo('/church-logo.png') + '?v=2'} alt="{registry.churchInfo.denomination} {CHURCH}" width="360" height="148" style="width:56mm;height:auto" /><br />{registry.churchInfo.pastorLabel} <b>{pastor}</b> <span class="seal-wrap">(인)<img class="seal-img" src={sealSrc} onerror={() => (sealFail = true)} alt="교회 직인" style="width:{cf.sealSize}mm;height:{cf.sealSize}mm" /></span></p>
 					<p class="foot-note" style="text-align:center;border:0">※ 이 영수증은 소득세 및 법인세 신고 시 기부금 영수증으로 사용할 수 있습니다.</p>
 				</div>
 

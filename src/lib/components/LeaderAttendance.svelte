@@ -21,6 +21,9 @@
 	let dirty = $state(false);
 	let msg = $state('');
 	let err = $state('');
+	// 로그인이 풀린 채로 저장을 누르면, 적어 둔 내용을 지키고 비밀번호만 다시 받는다
+	let relogin = $state(false);
+	let pw = $state('');
 
 	const md = (iso: string) => `${+iso.slice(5, 7)}월 ${+iso.slice(8, 10)}일`;
 	const errOf = (e: unknown, fallback: string) => (e instanceof ApiError || e instanceof Error ? e.message : fallback);
@@ -87,21 +90,45 @@
 			await auth.api('POST', '/leader/save', {
 				group: groupId, sunday, note,
 				items: members.map((m) => ({ id: m.id, present: m.present, reason: m.reason }))
-			});
+			}, { keep: true });
 			dirty = false;
+			relogin = false;
 			msg = `${md(sunday)} 출석을 저장했어요. (출석 ${presentCount}명 / ${members.length}명)`;
 		} catch (e) {
-			err = errOf(e, '저장하지 못했습니다. 잠시 뒤 다시 눌러 주세요.');
+			if (e instanceof ApiError && e.status === 401) {
+				relogin = true;
+				err = '로그인이 풀렸어요. 적어 둔 내용은 그대로 있어요. 비밀번호를 다시 넣으면 바로 저장돼요.';
+			} else {
+				err = errOf(e, '저장하지 못했습니다. 잠시 뒤 다시 눌러 주세요.');
+			}
 		} finally {
 			saving = false;
 		}
 	}
 
+	// 다시 로그인하고 이어서 저장
+	async function reloginAndSave(e: SubmitEvent) {
+		e.preventDefault();
+		const id = auth.user?.login_id;
+		if (!id) return;
+		try {
+			await auth.login(id, pw);
+			pw = '';
+			err = '';
+			await save();
+		} catch (x) {
+			err = errOf(x, '로그인하지 못했습니다.');
+			pw = '';
+		}
+	}
+
 	onMount(() => {
 		void loadInfo();
+		// 출석을 체크하는 동안에도 로그인이 풀리지 않게 4분마다 서버에 살아 있다고 알린다. (화면의 자동 로그아웃은 따로 있다)
+		const ping = setInterval(() => { void auth.api('GET', '/auth/me', undefined, { keep: true }).catch(() => {}); }, 4 * 60 * 1000);
 		const warn = (e: BeforeUnloadEvent) => { if (dirty) e.preventDefault(); };
 		window.addEventListener('beforeunload', warn);
-		return () => window.removeEventListener('beforeunload', warn);
+		return () => { window.removeEventListener('beforeunload', warn); clearInterval(ping); };
 	});
 </script>
 
@@ -137,6 +164,12 @@
 		{#if group}<p class="sub">{group.name} · {group.community}{group.place ? ` · ${group.place}` : ''}</p>{/if}
 
 		{#if err}<p class="warn" role="alert">{err}</p>{/if}
+		{#if relogin}
+			<form class="card relogin" onsubmit={reloginAndSave}>
+				<label>비밀번호 <input type="password" bind:value={pw} autocomplete="current-password" required placeholder="로그인 비밀번호" /></label>
+				<button type="submit" disabled={saving}>다시 로그인하고 저장</button>
+			</form>
+		{/if}
 		{#if msg}<p class="ok" role="status">{msg}</p>{/if}
 
 		{#if loading}
@@ -216,6 +249,8 @@
 	.etc textarea { width: 100%; font: inherit; padding: 0.8rem 0.9rem; border-radius: 14px; resize: vertical; }
 	.save { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: flex-end; align-items: center; gap: 0.8rem; padding: 0.7rem 1rem calc(0.7rem + env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--card, #fff) 94%, transparent); backdrop-filter: blur(6px); border-top: 1px solid var(--line, #dde2f3); }
 	.save button { min-width: 8rem; font-size: 1.05rem; padding: 0.8rem 1.4rem; }
+	.relogin { display: flex; gap: 0.6rem; align-items: flex-end; flex-wrap: wrap; margin: 0.4rem 0 0.8rem; padding: 0.8rem 1rem; }
+	.relogin label { flex: 1 1 12rem; margin: 0; }
 	.hint { color: #a83c10; font-size: 0.85rem; }
 	@media (min-width: 560px) {
 		.list li { grid-template-columns: auto minmax(9rem, 1fr) minmax(12rem, 1.3fr); }

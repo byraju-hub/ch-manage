@@ -24,6 +24,8 @@ function dispatch(string $path): never
 {
     $method = req_method();
     $pathMatched = false;
+    // 탭 아이콘은 로그인 화면에서도 보여야 하므로 로그인 없이 열린다. (세션을 시작하지 않아 쿠키도 보내지 않는다.)
+    if ($method === 'GET' && $path === '/files/favicon') serve_favicon();
     guard_demo($method, $path);
     guard_leader($method, $path);
     foreach ($GLOBALS['cm_routes'] as [$m, $rx, $handler]) {

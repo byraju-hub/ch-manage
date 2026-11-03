@@ -63,14 +63,15 @@ function serve_favicon(): never
         exit;
     }
     $base = rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
+    // 휴대폰 홈 화면용(?size=180)은 큰 기본 그림으로 보낸다.
+    $file = (($_GET['size'] ?? '') === '180') ? '/apple-touch-icon.png' : '/favicon-32.png';
     header('Cache-Control: public, max-age=3600');
-    header('Location: ' . $base . '/favicon-32.png', true, 302);
+    header('Location: ' . $base . $file . '?v=2', true, 302);
     exit;
 }
 
 // 교회 로고, 직인. 직인은 증명서를 만들 수 있는 사람(내려받기 권한)만.
 route('GET', '/files/{name}', function (string $name) {
-    if ($name === 'favicon') serve_favicon(); // 탭 아이콘은 로그인 화면에서도 보여야 하므로 로그인 없이 열린다
     $u = require_user();
     if ($name === 'seal' && !perms_of($u)['export']) json_fail('forbidden', '이 작업을 할 권한이 없습니다.', 403);
     data_serve_image(val('SELECT ' . ($name === 'seal' ? 'seal_path' : 'logo_path') . ' FROM ' . t('site_settings') . ' WHERE id = 1'));

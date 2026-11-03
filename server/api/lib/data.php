@@ -160,7 +160,7 @@ function data_specs(): array
         'groupAttendance' => [
             'table' => 'group_attendance', 'idcols' => ['sunday', 'person_id'], 'idkinds' => ['date', 'uuid'], 'level' => 4,
             'read' => 'any', 'write' => 'edit', 'order' => 'm.sunday, m.person_id',
-            'cols' => ['present' => ['b'], 'reason' => ['s', 255]],
+            'cols' => ['present' => ['b'], 'reason' => ['s', 255]], 'post' => 'data_post_group_attendance',
         ],
         'worshipTotals' => [
             'table' => 'worship_totals', 'idcols' => ['sunday'], 'idkinds' => ['date'], 'level' => 4,
@@ -293,9 +293,11 @@ function data_to_db(array $c, mixed $v, string $label): mixed
             return $v;
         case 'nref':
             if (!is_string($v)) throw new SyncError("{$label}: 이름이 올바르지 않습니다.");
-            $id = val('SELECT id FROM ' . t($c[2]) . ' WHERE `' . $c[3] . '` = ? LIMIT 1', [$v]);
-            if ($id === null) throw new SyncError("{$label}: '{$v}' 을(를) 찾을 수 없습니다.");
-            return $id;
+            $ids = rows('SELECT id FROM ' . t($c[2]) . ' WHERE `' . $c[3] . '` = ? LIMIT 2', [$v]);
+            if (!$ids) throw new SyncError("{$label}: '{$v}' 을(를) 찾을 수 없습니다.");
+            // 이름이 같은 것이 둘 이상이면 엉뚱한 쪽에 저장될 수 있으므로 저장하지 않는다.
+            if (count($ids) > 1) throw new SyncError("{$label}: '{$v}' 이(가) 둘 이상 있어 어느 것인지 알 수 없습니다. 이름을 서로 다르게 바꿔 주세요.");
+            return $ids[0]['id'];
     }
     throw new SyncError("{$label}: 알 수 없는 칸 종류입니다.");
 }
@@ -390,6 +392,14 @@ function data_post_people(array $rows, array $user): array
     return $rows;
 }
 
+/** 소그룹 인도자가 적은 교인별 특이사항(reason)은 심방 권한이 있는 사람에게만 보여 준다. 출석 여부는 모두에게 보인다. */
+function data_post_group_attendance(array $rows, array $user): array
+{
+    if (data_perm_ok($user, 'visit')) return $rows;
+    foreach ($rows as &$r) $r['reason'] = null;
+    return $rows;
+}
+
 /** 부서 담당자 목록(staff_ids)을 붙인다. */
 function data_post_org_units(array $rows, array $user): array
 {
@@ -470,6 +480,9 @@ function data_write_site(string $id, array $set, array &$ctx): void
         if ($k === 'churchInfo') {
             foreach (['logo' => 'logo_path', 'seal' => 'seal_path', 'favicon' => 'favicon_path'] as $f => $col) {
                 if (!array_key_exists($f, $v)) continue;
+                // 직인은 내려받기 권한이 있는 사람만 받아 보고 바꿀 수 있다. 권한이 없는 사람이 교회 정보를 저장하면서
+                // 비어 있는 직인 값이 따라 와도, 올려 둔 직인을 지우지 않는다.
+                if ($f === 'seal' && !perms_of($ctx['user'])['export']) { $v[$f] = null; continue; }
                 $val = $v[$f];
                 if (is_string($val) && str_starts_with($val, 'data:')) {
                     $new = data_save_image($val, $f, $f === 'favicon' ? 200_000 : 1_000_000);
@@ -524,6 +537,10 @@ function data_stamp_cert_request(array &$vals, bool $isInsert, array $ctx): void
 /** 부서 담당자(staff_ids)를 저장한다. */
 function data_after_org_unit(string $id, array $set, array &$ctx): void
 {
+    // 소속 기록은 부서를 이름으로 가리키므로, 같은 이름의 부서가 둘 생기지 않게 한다.
+    if (array_key_exists('name', $set) && (int)val('SELECT COUNT(*) FROM ' . t('org_units') . ' WHERE name = ?', [trim((string)$set['name'])]) > 1) {
+        throw new SyncError("'" . trim((string)$set['name']) . "' 이름의 부서가 이미 있습니다. 다른 이름을 써 주세요.", 'orgUnits', $id);
+    }
     if (!array_key_exists('staff_ids', $set)) return;
     $ids = $set['staff_ids'];
     if (!is_array($ids)) throw new SyncError('담당자 목록이 올바르지 않습니다.', 'orgUnits', $id);

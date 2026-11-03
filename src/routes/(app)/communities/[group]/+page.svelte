@@ -11,7 +11,7 @@
 	const YEAR = new Date().getFullYear();
 	const YEAR_WEEKS = recentSundays(60).filter((d) => d.startsWith(`${YEAR}-`));
 	const rateOf = (id: string, registered: string | null) => {
-		const ws = YEAR_WEEKS.map((d, i) => ({ d, back: YEAR_WEEKS.length - 1 - i })).filter((w) => !registered || w.d >= registered);
+		const ws = recordedWeeks.map((d, i) => ({ d, back: recordedWeeks.length - 1 - i })).filter((w) => !registered || w.d >= registered);
 		if (!ws.length) return 0;
 		return Math.round((ws.filter((w) => registry.groupAttended(id, w.d, w.back)).length * 100) / ws.length);
 	};
@@ -19,6 +19,8 @@
 	// 정렬: 인도자는 늘 맨 위, 그 아래는 고른 순서 (기본: 출석률 높은 순 / 가나다 순 / 나이 많은 순)
 	const SORTS = ['출석률 순', '가나다 순', '나이 순'] as const;
 	let sortBy = $state<(typeof SORTS)[number]>('출석률 순');
+	// 이 소그룹이 출석을 기록한 주일만 센다 (기록이 없는 주일은 뺌)
+	const recordedWeeks = $derived(g ? YEAR_WEEKS.filter((d) => registry.groupRecorded(d, registry.membersOfGroup(g.name).map((p) => p.id))) : []);
 	type M = { p: { name: string; birth_date: string | null }; rate: number };
 	const byName = (a: M, b: M) => a.p.name.localeCompare(b.p.name, 'ko');
 	const members = $derived.by(() => {
@@ -35,6 +37,10 @@
 	});
 	const weekly = $derived(WEEKS.map((d, i) => ({ d, n: members.filter(({ p }) => registry.groupAttended(p.id, d, WEEKS.length - 1 - i)).length })));
 	const maxN = $derived(Math.max(1, ...weekly.map((w) => w.n)));
+	// 인도자가 출석 체크 화면에서 교인별로 적은 특이사항 (최근 8주, 최신 주일부터)
+	const reasons = $derived(
+		WEEKS.flatMap((d) => members.map(({ p }) => ({ d, p, text: registry.d.groupAttendance?.[d]?.[p.id]?.reason ?? '' })).filter((x) => x.text)).sort((a, b) => b.d.localeCompare(a.d))
+	);
 	const notes = $derived(g ? registry.d.groupNotes.filter((n) => n.small_group === g.name) : []);
 	const nameOf = (id: string | null) => (id ? registry.person(id)?.name ?? '' : '');
 	let noteFor = $state('');
@@ -66,7 +72,7 @@
 		</section>
 		{#if registry.perms.visit}
 		<section class="card">
-			<div class="card-head"><h2>인도자 특이사항</h2><span class="sub">(출석부에서 인도자가 적는 개별 메모)</span></div>
+			<div class="card-head"><h2>인도자 특이사항</h2><span class="sub">(인도자가 출석 체크 화면에서 적는 교인별 메모와 기타 의견)</span></div>
 			{#each notes.slice(0, 8) as n (n.id)}
 				<div class="li">
 					{#if n.person_id}
@@ -77,7 +83,13 @@
 						<div class="grow"><b><span class="tag part" style="margin:0">기타 의견</span></b><small>{n.date} · {n.author} — {n.body}</small></div>
 					{/if}
 				</div>
-			{:else}<p class="empty">적힌 특이사항이 없습니다.</p>{/each}
+			{:else}{#if !reasons.length}<p class="empty">적힌 특이사항이 없습니다.</p>{/if}{/each}
+			{#each reasons as r (r.d + r.p.id)}
+				<div class="li">
+					<span class="avatar warm">{r.p.name.slice(0, 1)}</span>
+					<div class="grow"><b><a href={hrefTo(`/${r.p.id}`)}>{r.p.name}</a></b><small>{r.d} 출석 체크 · 인도자 — {r.text}</small></div>
+				</div>
+			{/each}
 			{#if registry.perms.edit}
 				<form class="row" style="margin-top:.8rem;flex-wrap:nowrap" onsubmit={(e) => { e.preventDefault(); if (noteFor && noteBody.trim()) { registry.addGroupNote({ person_id: noteFor, small_group: g!.name, date: new Date().toISOString().slice(0, 10), body: noteBody.trim(), author: nameOf(g!.leader_id) || '인도자' }); noteBody = ''; } }}>
 					<select bind:value={noteFor} style="width:9rem"><option value="">교인 선택</option>{#each members as { p }}<option value={p.id}>{p.name}</option>{/each}</select>
@@ -91,7 +103,7 @@
 	<div class="sort-row">
 		<span class="muted">정렬</span>
 		{#each SORTS as s}<button type="button" class="ghost sm" class:on={sortBy === s} onclick={() => (sortBy = s)}>{s}</button>{/each}
-		<span class="muted" style="font-size:.8rem">인도자는 늘 맨 위 · 출석률은 올해 {registry.t2} 모임 기준 · 나이 순은 나이 많은 순</span>
+		<span class="muted" style="font-size:.8rem">인도자는 늘 맨 위 · 출석률은 올해 {registry.t2} 모임 중 출석을 기록한 주일 기준 · 나이 순은 나이 많은 순</span>
 	</div>
 	<div class="card" style="padding:0;overflow-x:auto">
 		<table class="sm" style="table-layout:fixed;min-width:900px">
@@ -106,10 +118,10 @@
 						<td class="nw">{p.birth_date ?? '-'}{p.birth_lunar ? ' (음)' : ''}</td>
 						<td style="text-align:center">{ageOf(p.birth_date) ?? '-'}</td>
 						<td class="nw">{p.phone ?? '-'}</td>
-						<td style="text-align:center"><b>{rate}%</b></td>
+						<td style="text-align:center"><b>{recordedWeeks.length ? `${rate}%` : '-'}</b></td>
 						{#each WEEKS as d, i}
 							{@const ok = registry.groupAttended(p.id, d, WEEKS.length - 1 - i)}
-							<td style="text-align:center"><span class="pdot" class:on={ok}></span></td>
+							<td style="text-align:center" title={registry.perms.visit ? (registry.d.groupAttendance?.[d]?.[p.id]?.reason ?? undefined) : undefined}><span class="pdot" class:on={ok}></span></td>
 						{/each}
 					</tr>
 				{:else}<tr><td colspan="14" class="muted">소속 교인이 없습니다.</td></tr>{/each}

@@ -446,6 +446,11 @@ class Registry {
 	groupAttended(personId: string, sundayIso: string, _weeksFromEnd: number): boolean {
 		return this.d.groupAttendance?.[sundayIso]?.[personId]?.present ?? false;
 	}
+	// 그 주일에 이 소그룹의 출석을 한 명이라도 기록했는가. 기록이 없는 주일은 '모두 결석'이 아니라 '기록 없음'이라서 출석률 계산에서 뺀다.
+	groupRecorded(sundayIso: string, personIds: string[]): boolean {
+		const m = this.d.groupAttendance?.[sundayIso];
+		return !!m && personIds.some((id) => id in m);
+	}
 	// 홈페이지 출석부 기록을 받아 저장하는 자리 (교적 화면에서는 직접 입력하지 않음)
 	setGroupAttendance(sundayIso: string, personId: string, present: boolean, reason: string | null) {
 		const all = { ...(this.d.groupAttendance ?? {}) };
@@ -890,19 +895,28 @@ class Registry {
 		this.log('소그룹 삭제', `${g.community} › ${g.name}`);
 		return null;
 	}
-	addOrgUnit(parent_id: string | null, name: string) {
-		if (!name.trim()) return;
+	// 소속 기록이 부서를 이름으로 가리키므로, 같은 이름의 부서는 둘 수 없다 (다른 위원회 밑이라도 마찬가지). 문제가 있으면 안내 문장을 돌려준다.
+	orgNameTaken(name: string, exceptId?: string): boolean {
+		const n = name.trim();
+		return this.d.orgUnits.some((o) => o.name === n && o.id !== exceptId);
+	}
+	addOrgUnit(parent_id: string | null, name: string): string | null {
+		if (!name.trim()) return null;
+		if (this.orgNameTaken(name)) return `'${name.trim()}' 이름의 부서가 이미 있습니다. 다른 이름을 써 주세요. (예: 위원회 이름을 앞에 붙여 '교육 회계')`;
 		this.d.orgUnits.push({ id: uid(), parent_id, name: name.trim(), sort_order: this.d.orgUnits.filter((o) => o.parent_id === parent_id).length + 1, leader_id: null, staff_ids: [] });
 		this.save();
+		return null;
 	}
-	renameOrgUnit(id: string, name: string) {
+	renameOrgUnit(id: string, name: string): string | null {
 		const o = this.d.orgUnits.find((x) => x.id === id);
+		if (o && name.trim() && name.trim() !== o.name && this.orgNameTaken(name, id)) return `'${name.trim()}' 이름의 부서가 이미 있습니다. 다른 이름을 써 주세요.`;
 		if (o && name.trim()) {
 			// 소속 기록의 이름도 함께 바꿈
 			for (const a of this.d.affiliations) if (a.org === o.name) a.org = name.trim();
 			o.name = name.trim();
 			this.save();
 		}
+		return null;
 	}
 	setOrgLeader(id: string, leader_id: string | null) {
 		const o = this.d.orgUnits.find((x) => x.id === id);

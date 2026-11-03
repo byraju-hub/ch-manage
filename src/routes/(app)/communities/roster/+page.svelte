@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { hrefTo } from '#lib/registry/paths.ts';
 	// 소그룹별 명단: 2026년 편성표 순서(뿌리 → 줄기 → 열매, 소그룹도 편성표 순서), 마지막에 미지정자(장년 예배·가끔출석 중 공동체 없는 사람).
-	// 각 명단은 가나다순, 올해(1월 1일 ~ 지난 주일) 소그룹 모임 출석률로 색 구분 (80% 이상 / 50~79% / 50% 미만), 인도자는 파랑
+	// 각 명단은 가나다순, 올해(1월 1일 ~ 지난 주일) 소그룹 모임 출석률(출석을 기록한 주일만 셈)로 색 구분 (80% 이상 / 50~79% / 50% 미만), 인도자는 파랑
 	// 올해 등록한 사람은 등록일 이후 주일만 셈
 	import { registry } from '#lib/registry/store.svelte.ts';
 	import { recentSundays } from '#lib/registry/weeks.ts';
@@ -14,8 +14,18 @@
 	const active = $derived(registry.d.people.map((p) => ({ p, s: registry.summary(p) })).filter(({ s }) => s.memberCert));
 	const YEAR = new Date().getFullYear();
 	const WEEKS = recentSundays(60).filter((d) => d.startsWith(`${YEAR}-`));
-	const rateOf = (id: string, registered: string | null) => {
-		const ws = WEEKS.map((d, i) => ({ d, back: WEEKS.length - 1 - i })).filter((w) => !registered || w.d >= registered);
+	// 소그룹마다 출석을 기록한 주일만 센다 (기록이 없는 주일은 뺌)
+	const recordedOf = $derived.by(() => {
+		const m = new Map<string, string[]>();
+		for (const g of registry.d.smallGroups) {
+			const ids = registry.membersOfGroup(g.name).map((p) => p.id);
+			m.set(g.name, WEEKS.filter((d) => registry.groupRecorded(d, ids)));
+		}
+		return m;
+	});
+	const rateOf = (id: string, registered: string | null, group: string | null | undefined) => {
+		const recorded = (group && recordedOf.get(group)) || [];
+		const ws = recorded.map((d, i) => ({ d, back: recorded.length - 1 - i })).filter((w) => !registered || w.d >= registered);
 		if (!ws.length) return 0;
 		return Math.round((ws.filter((w) => registry.groupAttended(id, w.d, w.back)).length * 100) / ws.length);
 	};
@@ -23,7 +33,7 @@
 	type Row = (typeof active)[number] & { rate: number };
 	const leaders = $derived(new Set(registry.d.smallGroups.map((g) => g.leader_id).filter((x): x is string => !!x)));
 	const byGroup = $derived.by(() => {
-		const rows: Row[] = active.map((x) => ({ ...x, rate: rateOf(x.p.id, x.s.registered ?? null) }));
+		const rows: Row[] = active.map((x) => ({ ...x, rate: rateOf(x.p.id, x.s.registered ?? null, x.s.smallGroup) }));
 		const byName = (a: Row, b: Row) => a.p.name.localeCompare(b.p.name, 'ko');
 		const out: { community: string; groups: { name: string; xs: Row[]; rate: number }[] }[] = [];
 		const used = new Set<Row>();
@@ -168,7 +178,7 @@
 		</div>
 	</div>
 {/if}
-<p class="legend-att muted">{YEAR}년 {registry.t2} 모임 출석률 (1월 1일 ~ {WEEKS.at(-1)?.slice(5).replace('-', '/')}, 주일 {WEEKS.length}회) ·
+<p class="legend-att muted">{YEAR}년 {registry.t2} 모임 출석률 (1월 1일 ~ {WEEKS.at(-1)?.slice(5).replace('-', '/')} 중 출석을 기록한 주일만 셈) ·
 	<span class="hi">● 80% 이상</span> <span class="mid">● 50~79%</span> <span class="lo">● 50% 미만</span> <span class="lead">● 인도자</span>
 	<span>(이름 옆 숫자는 개인 출석률)</span></p>
 {#each shown as c}

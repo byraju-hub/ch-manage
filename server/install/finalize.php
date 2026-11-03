@@ -6,6 +6,14 @@ declare(strict_types=1);
 
 const CM_PLACEHOLDER = '/__CM_BASE__';
 
+/** 주소가 http:// 로 들어오면 https:// 로 보내는 규칙. 비밀번호와 교적이 암호화 없이 오가지 않게 한다.
+ *  내 컴퓨터(localhost)에서 시험할 때는 건드리지 않고, 호스팅 앞단이 https 를 처리하는 경우(X-Forwarded-Proto)도 인정한다. */
+const CM_HTTPS_RULES = "# ch-manage-https: http 로 들어오면 https 로\n"
+    . "RewriteCond %{HTTPS} !=on\n"
+    . "RewriteCond %{HTTP:X-Forwarded-Proto} !=https\n"
+    . "RewriteCond %{HTTP_HOST} !^(localhost|127\\.0\\.0\\.1)(:\\d+)?$ [NC]\n"
+    . "RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]\n";
+
 /** 이 설치 화면이 있는 폴더의 주소. 사이트 맨 위에 설치했다면 빈 문자열. 예: /cm */
 function cm_base_path(): string
 {
@@ -17,7 +25,8 @@ function cm_needs_finalize(): bool
 {
     $index = CM_ROOT . '/index.html';
     if (!is_file($index)) return false;
-    return str_contains((string)file_get_contents($index), CM_PLACEHOLDER) || !is_file(CM_ROOT . '/.htaccess');
+    $ht = CM_ROOT . '/.htaccess';
+    return str_contains((string)file_get_contents($index), CM_PLACEHOLDER) || !is_file($ht) || !str_contains((string)file_get_contents($ht), 'ch-manage-https');
 }
 
 /** 화면 파일 안의 자리표시자를 실제 폴더 주소로 바꾸고, 주소 처리용 .htaccess 를 만든다. 바꾼 파일 수를 돌려준다. */
@@ -48,6 +57,7 @@ function cm_finalize_web(): int
         $rules = "# ch-manage: 화면(SPA) 주소 처리\n"
             . "RewriteEngine On\n"
             . 'RewriteBase ' . $base . "/\n"
+            . CM_HTTPS_RULES
             . "RewriteCond %{REQUEST_FILENAME} !-f\n"
             . "RewriteCond %{REQUEST_FILENAME} !-d\n"
             . "RewriteRule ^ index.html [L]\n\n"
@@ -55,6 +65,11 @@ function cm_finalize_web(): int
             . "  <FilesMatch \"\\.html$\">\n    Header set Cache-Control \"no-cache\"\n  </FilesMatch>\n"
             . "</IfModule>\n";
         @file_put_contents($ht, $rules, LOCK_EX);
+    } elseif (!str_contains((string)file_get_contents($ht), 'ch-manage-https')) {
+        // 예전 버전이 만든 .htaccess 에는 https 규칙이 없으므로, 한 번만 끼워 넣는다. (직접 고친 내용은 그대로 둔다.)
+        $cur = (string)file_get_contents($ht);
+        $new = preg_replace('/^RewriteEngine On\R/mi', '$0' . addcslashes(CM_HTTPS_RULES, '\\$'), $cur, 1, $n);
+        if ($n === 1) @file_put_contents($ht, $new, LOCK_EX);
     }
     return $changed;
 }

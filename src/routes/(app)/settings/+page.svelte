@@ -36,6 +36,7 @@
 	let orgName = $state('');
 	let deptFor = $state('');
 	let deptName = $state('');
+	let orgMsg = $state('');
 
 	const roots = $derived(registry.childrenOf(null));
 	function add(parent: string | null) {
@@ -220,10 +221,11 @@
 		<div class="card">
 			<h2>교회 조직표 <span class="tag">위원회 / 부서</span></h2>
 			<p class="muted">위원회마다 위원장(장로), 부서마다 부서장 · 교역자(각 한 명)와 담당자(여러 명)를 정합니다. 조직 › 교회 조직표에는 부서장과 교역자만 보입니다. ▲▼로 순서를 바꿉니다. 교인 카드의 '교회봉사'에서 이 부서 목록을 고릅니다. 봉사자가 있는 부서는 지울 수 없습니다.</p>
+			{#if orgMsg}<div class="warn" role="alert" style="margin:.6rem 0">{orgMsg}</div>{/if}
 			{#each committees as c, ci (c.id)}
 				<div class="org-edit">
 					<div class="cat-row">
-						<span class="lvl">{ci + 1}</span><input value={c.name} onchange={(e) => registry.renameOrgUnit(c.id, e.currentTarget.value)} style="max-width:12rem" />
+						<span class="lvl">{ci + 1}</span><input value={c.name} onchange={(e) => { orgMsg = registry.renameOrgUnit(c.id, e.currentTarget.value) ?? ''; if (orgMsg) e.currentTarget.value = c.name; }} style="max-width:12rem" />
 						<span class="muted" style="font-size:.8rem">위원장</span>
 						<div style="width:14rem"><PersonPicker compact value={c.leader_id ?? ''} placeholder="장로 검색" onpick={(id) => registry.setOrgLeader(c.id, id)} /></div>
 						<button type="button" class="ghost sm" onclick={() => registry.moveOrgUnit(c.id, -1)} aria-label="위로">▲</button>
@@ -235,7 +237,7 @@
 						<tbody>
 							{#each registry.d.orgUnits.filter((o) => o.parent_id === c.id).sort((a, b) => a.sort_order - b.sort_order) as d (d.id)}
 								<tr>
-									<td><input value={d.name} onchange={(e) => registry.renameOrgUnit(d.id, e.currentTarget.value)} style="min-width:9rem" /></td>
+									<td><input value={d.name} onchange={(e) => { orgMsg = registry.renameOrgUnit(d.id, e.currentTarget.value) ?? ''; if (orgMsg) e.currentTarget.value = d.name; }} style="min-width:9rem" /></td>
 									<td><PersonPicker compact value={d.leader_id ?? ''} placeholder="부서장 검색" onpick={(id) => registry.setOrgLeader(d.id, id)} /></td>
 									<td><div class="row" style="gap:.35rem;flex-wrap:nowrap"><div style="flex:1;min-width:0"><PersonPicker nameOnly only={(p) => !!p.clergy_title} value={d.clergy_id ?? ''} placeholder="교역자 검색" onpick={(id) => registry.setOrgClergy(d.id, id)} /></div>{#if d.clergy_id}<button type="button" class="ghost sm" onclick={() => registry.setOrgClergy(d.id, null)} title="이 부서의 교역자 비우기">삭제</button>{/if}</div></td>
 									<td><NameChips chips={d.staff_ids.map((id) => ({ id, name: registry.person(id)?.name ?? '' }))} onchange={(cs) => registry.setOrgStaff(d.id, cs.filter((x) => x.id).map((x) => x.id!))} placeholder="담당자 이름," /></td>
@@ -251,10 +253,10 @@
 					</table>
 				</div>
 			{/each}
-			<form class="cat-row" style="margin-top:.8rem" onsubmit={(e) => { e.preventDefault(); registry.addOrgUnit(null, orgName); orgName = ''; }}>
+			<form class="cat-row" style="margin-top:.8rem" onsubmit={(e) => { e.preventDefault(); orgMsg = registry.addOrgUnit(null, orgName) ?? ''; if (!orgMsg) orgName = ''; }}>
 				<span class="lvl">+</span><input bind:value={orgName} placeholder="새 위원회 이름" /><button type="submit" class="sm">위원회 추가</button>
 			</form>
-			<form class="cat-row" onsubmit={(e) => { e.preventDefault(); if (deptFor) registry.addOrgUnit(deptFor, deptName); deptName = ''; }}>
+			<form class="cat-row" onsubmit={(e) => { e.preventDefault(); if (deptFor) { orgMsg = registry.addOrgUnit(deptFor, deptName) ?? ''; if (!orgMsg) deptName = ''; } }}>
 				<span class="lvl">+</span>
 				<select bind:value={deptFor} style="max-width:12rem"><option value="">위원회 선택</option>{#each committees as c}<option value={c.id}>{c.name}</option>{/each}</select>
 				<input bind:value={deptName} placeholder="새 부서 이름" /><button type="submit" class="sm" disabled={!deptFor}>부서 추가</button>

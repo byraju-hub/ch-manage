@@ -70,16 +70,19 @@ function leader_members(array $g, string $leaderPersonId): array
         $rank = $rank === false ? 99 : $rank;
         if (!isset($office[$o['person_id']]) || $rank < $office[$o['person_id']][0]) $office[$o['person_id']] = [$rank, $o];
     }
-    // 올해 출석률: 올해 1월 1일부터 지난 주일까지, 올해 등록한 사람은 등록일 이후만
+    // 올해 출석률: 올해 1월 1일부터 지난 주일까지 중 기록이 있는 주일만, 올해 등록한 사람은 등록일 이후만
     $year = date('Y');
     $sundays = [];
     for ($d = strtotime("$year-01-01"); $d <= strtotime(last_sunday()); $d += 86400) {
         if (date('w', $d) === '0') $sundays[] = date('Y-m-d', $d);
     }
     $present = [];
-    foreach (rows('SELECT person_id, sunday FROM ' . t('group_attendance') . " WHERE present = 1 AND sunday >= ? AND person_id IN ($in)", ["$year-01-01", ...$ids]) as $a) {
-        $present[$a['person_id']][$a['sunday']] = true;
+    $recorded = []; // 이 소그룹에서 출석을 한 번이라도 기록한 주일 (기록이 없는 주일은 출석률 계산에서 뺀다)
+    foreach (rows('SELECT person_id, sunday, present FROM ' . t('group_attendance') . " WHERE sunday >= ? AND person_id IN ($in)", ["$year-01-01", ...$ids]) as $a) {
+        $recorded[$a['sunday']] = true;
+        if ((int)$a['present'] === 1) $present[$a['person_id']][$a['sunday']] = true;
     }
+    $sundays = array_values(array_filter($sundays, fn($s) => isset($recorded[$s])));
 
     $out = [];
     foreach ($people as $p) {

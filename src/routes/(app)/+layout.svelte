@@ -178,7 +178,7 @@
 	<header class="site-header" class:compact={hbP >= 1} style:--hb-p={hbP}>
 		<div class="bar">
 			<a class="brand" href={hrefTo('/')}>
-				<img class="logo" src={registry.churchInfo.logo || hrefTo('/logo.png')} alt="" width="38" height="38" />
+				<img class="logo" src={registry.churchInfo.favicon || hrefTo('/logo.png') + '?v=2'} alt="" width="38" height="38" />
 				<span><b>{registry.churchInfo.name} 교적 관리</b></span>
 			</a>
 
@@ -290,7 +290,7 @@
 			</div>
 		{:else if !unlocked}
 			<div class="card lock">
-				<img src={hrefTo('/logo.png')} alt="" width="64" height="64" style="display:block;margin:0 auto .8rem;border-radius:18px;box-shadow:0 6px 18px rgba(43,62,149,.25)" />
+				<img src={registry.churchInfo.favicon || hrefTo('/api/v1/files/favicon?size=180')} alt="" width="64" height="64" style="display:block;margin:0 auto .8rem;border-radius:18px;box-shadow:0 6px 18px rgba(43,62,149,.25)" />
 				{#if mode === 'login'}
 					<h2 class="brand-font">{registry.churchInfo.name} 교적 관리</h2>
 					<form onsubmit={doLogin}>
