@@ -1,6 +1,6 @@
 name: Release
 
-# v0.2.0 같은 태그를 올리면 배포용 zip(설치 가이드 PDF 포함)을 만들어 GitHub Releases 에 붙인다.
+# v0.1.0 같은 태그를 올리면 배포용 zip(설치 가이드 PDF 포함)을 만들어 GitHub Releases 에 붙인다.
 # Actions 탭에서 수동으로 실행하면 zip 만 만들어 내려받을 수 있다. (릴리스는 만들지 않는다.)
 on:
   push:
