@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { hrefTo } from '#lib/registry/paths.ts';
+	import { auth } from '#lib/registry/auth.svelte.ts';
 	// 문자 보내기 창: 교인 목록의 검색 결과에게 SMS·LMS 발송 (서버: /api/sms, 솔라피)
 	//  - 문자 수신 거부 · 휴대폰 번호 없음 · 같은 번호(가족이 한 번호를 쓰는 경우)는 자동으로 빼고 보여 줌
 	//  - {이름} · {직분} 을 넣으면 받는 사람마다 이름 · 직분(구분 없이, 없으면 '성도')으로 바뀜
@@ -83,6 +83,7 @@
 	let showOut = $state(false);
 	let busy = $state(false);
 	let result = $state<{ ok: boolean; msg: string } | null>(null);
+	let progress = $state('');
 	async function send() {
 		if (!text.trim() || !split.to.length || tooLong || tooMany || busy) return;
 		if (blanks.length && !confirm(`아직 고치지 않은 칸이 있습니다: ${blanks.join(' ')}\n그대로 보낼까요?`)) return;
@@ -90,15 +91,28 @@
 		busy = true;
 		result = null;
 		try {
-			const r = await fetch(hrefTo('/api/v1/sms'), {
-				method: 'POST',
-				headers: { 'content-type': 'application/json', 'x-sms-send': '1' },
-				body: JSON.stringify({ subject, messages: split.to.map((p) => ({ to: p.phone, text: fill(p) })) })
-			});
-			const d = (await r.json()) as { error?: string; demo?: boolean; sent?: number; failed?: number; note?: string };
-			if (!r.ok || d.error) throw new Error(d.error || `발송 실패 (${r.status})`);
-			registry.log('문자 발송', `${d.demo ? '(시연) ' : ''}${kind} · ${split.to.length}명${d.failed ? ` · 실패 ${d.failed}` : ''}`);
-			result = { ok: true, msg: d.demo ? d.note ?? '시연으로 처리했습니다.' : `${d.sent}명에게 보냈습니다.${d.failed ? ` (실패 ${d.failed}명)` : ''} ${d.note ?? ''}` };
+			// 호스팅이 한 번에 받는 크기(128KB)와 서버의 1회 한도(300건)에 맞춰 나눠서 보낸다.
+			const all = split.to.map((p) => ({ to: p.phone, text: fill(p), pid: p.id }));
+			const batches: (typeof all)[] = [];
+			let cur: typeof all = [], size = 0;
+			for (const m of all) {
+				const n = JSON.stringify(m).length;
+				if (cur.length && (cur.length >= 300 || size + n > 70_000)) { batches.push(cur); cur = []; size = 0; }
+				cur.push(m); size += n;
+			}
+			if (cur.length) batches.push(cur);
+			let sent = 0, failed = 0, skipped = 0;
+			try {
+				for (let i = 0; i < batches.length; i++) {
+					progress = batches.length > 1 ? `${i + 1}/${batches.length} 묶음 보내는 중…` : '';
+					const d = await auth.api<{ sent: number; failed: number; skipped: number }>('POST', '/sms/send', { subject, messages: batches[i] });
+					sent += d.sent; failed += d.failed; skipped += d.skipped;
+				}
+			} catch (e) {
+				const done = sent + failed + skipped;
+				throw new Error((e instanceof Error ? e.message : '발송 중 오류가 났습니다.') + (done ? ` (앞의 ${sent}명에게는 이미 보냈습니다. 같은 문자를 다시 보내지 않도록 확인해 주세요.)` : ''));
+			} finally { progress = ''; }
+			result = { ok: true, msg: `${sent}명에게 보냈습니다.${failed ? ` (실패 ${failed}명)` : ''}${skipped ? ` (수신 거부·중복 ${skipped}명 제외)` : ''}` };
 		} catch (e) {
 			result = { ok: false, msg: e instanceof Error ? e.message : '발송 중 오류가 났습니다.' };
 		} finally {

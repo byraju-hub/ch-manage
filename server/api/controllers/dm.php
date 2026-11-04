@@ -115,3 +115,65 @@ route('POST', '/dm/create-in-cm', function () {
     audit('교적에 만들기', $pid, ['kind' => $kind]);
     json_out(['personId' => $pid]);
 });
+
+// ===== 2차: 사진 맞추기 · 부서/학년(승급) 맞추기 (상세 규칙은 lib/dmextra.php) =====
+
+route('GET', '/dm/photos/preview', function () {
+    require_super();
+    dm_require();
+    $dir = dm_data_dir();
+    json_out(['dataDirFound' => $dir !== null, 'dataDir' => $dir, 'gd' => extension_loaded('gd'), 'items' => $dir ? dm_photo_items() : []]);
+});
+
+/** 부서 관리의 data 폴더를 직접 알려 준다. (자동으로 찾지 못할 때. 비우면 자동 찾기로 돌아간다.) */
+route('POST', '/dm/data-dir', function () {
+    require_super();
+    $p = rtrim(str_replace('\\', '/', trim((string)(body()['path'] ?? ''))), '/');
+    if ($p === '') {
+        q('DELETE FROM ' . t('meta') . " WHERE k = 'dm_data_dir'");
+    } else {
+        if (!is_dir($p) || !is_file($p . '/config.php') || !is_writable($p)) json_fail('invalid', '부서 관리의 data 폴더를 찾을 수 없거나 쓸 수 없습니다. (그 안에 config.php 가 있어야 합니다)', 422);
+        meta_set('dm_data_dir', $p);
+    }
+    audit('부서 관리 data 폴더 설정');
+    json_out(['saved' => true]);
+});
+
+route('POST', '/dm/photos/sync', function () {
+    require_super();
+    dm_require();
+    $ids = body()['linkIds'] ?? null;
+    if ($ids !== null && !is_array($ids)) json_fail('invalid', '목록이 올바르지 않습니다.', 422);
+    $ids = $ids === null ? null : array_map('intval', $ids);
+    if (!dm_data_dir()) json_fail('dm_dir', '부서 관리의 data 폴더를 찾지 못했습니다. 경로를 직접 알려 주세요.', 409);
+    $n = ['toDm' => 0, 'toCm' => 0];
+    $failed = [];
+    foreach (dm_photo_items() as $it) {
+        if ($it['state'] === 'both' || ($ids !== null && !in_array($it['linkId'], $ids, true))) continue;
+        try {
+            if ($it['state'] === 'to_dm') { dm_photo_to_dm($it); $n['toDm']++; }
+            else { dm_photo_to_cm($it); $n['toCm']++; }
+        } catch (Throwable $e) {
+            $failed[] = $it['name'] . ': ' . $e->getMessage();
+        }
+    }
+    if ($n['toCm']) q('UPDATE ' . t('meta') . " SET v = v + 1 WHERE k = 'data_version'");
+    audit('부서 관리 사진 맞추기', '', $n + ['failed' => count($failed)]);
+    json_out($n + ['failed' => array_slice($failed, 0, 10)]);
+});
+
+route('GET', '/dm/dept/preview', function () {
+    require_super();
+    dm_require();
+    json_out(['items' => dm_dept_items()]);
+});
+
+route('POST', '/dm/dept/sync', function () {
+    $u = require_super();
+    dm_require();
+    $ids = body()['linkIds'] ?? null;
+    if ($ids !== null && !is_array($ids)) json_fail('invalid', '목록이 올바르지 않습니다.', 422);
+    $n = dm_dept_apply($u, $ids === null ? null : array_map('intval', $ids));
+    audit('부서 관리 부서·학년 맞추기', '', ['count' => $n]);
+    json_out(['synced' => $n]);
+});

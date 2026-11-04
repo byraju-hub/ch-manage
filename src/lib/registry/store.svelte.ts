@@ -103,6 +103,7 @@ class Registry {
 	d = $state<Data>(emptyData());
 	saveError = $state('');
 	loaded = $state(false); // 서버에서 데이터를 받았는가
+	features = $state({ sms: false, ai: false }); // 외부 서비스(문자 발송·AI 분석)가 설정되어 켜져 있는가
 	loading = $state(false);
 	loadError = $state('');
 	constructor() {
@@ -139,7 +140,8 @@ class Registry {
 	}
 	/** 다른 사람이 저장했거나 저장이 거절되었을 때: 서버의 값으로 다시 받는다 */
 	async reload() { this.applyBootstrap(await auth.api('GET', '/bootstrap')); }
-	private applyBootstrap(b: { version: number; tables: Record<string, Row[]> }) {
+	private applyBootstrap(b: { version: number; tables: Record<string, Row[]>; features?: { sms: boolean; ai: boolean } }) {
+		this.features = { sms: !!b.features?.sms, ai: !!b.features?.ai };
 		const d = emptyData();
 		for (const c of CODECS) { const rows = b.tables[c.name]; if (rows) c.load(d, rows, { visit: this.perms.visit }); }
 		sync.baseline(d, b.version);
@@ -279,20 +281,6 @@ class Registry {
 	}
 	// 지금 담임목사 이름 (기본 설정에 적은 이름이 먼저, 없으면 교적의 담임목사)
 	get pastorName(): string { return this.churchInfo.pastorName || this.d.people.find((p) => p.clergy_title === '담임목사')?.name || ''; }
-	// 백업: 지금 데이터 전체를 파일로 / 파일에서 되살리기 (최고관리자만)
-	backupJson(): string {
-		const b = { ...this.backupCfg, last: now() };
-		this.d.backup = b;
-		this.log('백업', '데이터 전체 내려받기');
-		return JSON.stringify({ app: 'church-registry', version: 'ch-manage-1', at: now(), data: $state.snapshot(this.d) });
-	}
-	restoreJson(text: string): string {
-		if (!this.isSuper) return '최고관리자만 되살릴 수 있습니다.';
-		// 서버에 저장된 자료를 백업 파일로 되돌리는 기능은 서버 백업과 함께 만든다(준비 중).
-		void text;
-		return '백업 파일로 되살리는 기능은 서버 백업과 함께 준비 중입니다.';
-	}
-
 	// ---- 연간 설정 ----
 	// 저장된 연도 설정이 없으면 기본값(2026년 기준을 그 해에 맞춘 값)
 	// 공동체 기준은 지금 공동체 목록에 맞춤 (새로 만든 공동체는 기본 기준, 지운 공동체는 뺌)

@@ -334,7 +334,7 @@
 						<label>방법<select bind:value={vs.method}><option>대면</option><option>전화</option></select></label>
 						<label>담당 교역자<select bind:value={vs.pastor}><option value="">(선택)</option>{#each clergy as c}<option>{c.name}</option>{/each}</select></label>
 						<label class="wide">동행자 <span class="muted" style="font-weight:400">(이름을 쓰고 쉼표)</span><NameChips bind:chips={vsCompanions} allowFree placeholder="예: 김영수, 이순희" /></label>
-						<div class="wide"><VisitAnalyzer onresult={applyAnalysis} /></div>
+						{#if registry.features.ai}<div class="wide"><VisitAnalyzer onresult={applyAnalysis} /></div>{/if}
 						<label>말씀<input bind:value={vs.scripture} /></label>
 						<label>찬송<input bind:value={vs.hymn} /></label>
 						<label class="wide"><span class="lt">심방 내용 <small class="hint">(예: 22일 입원, 23일 수술 과 같이 날짜와 함께 기록하면 캘린더의 성도 일정에 자동으로 입력이 됩니다.)</small></span><small class="hint">*자동 등록 해당 문구 : 입원 · 퇴원 · 수술 · 시술 · 검사 · 항암 · 치료 · 출산 · 돌잔치 · 결혼식 · 장례 · 입관 · 발인 · 이사 · 개업 · 입대 · 전역 · 제대 · 입학 · 졸업 · 출국 · 귀국 등</small><textarea rows="4" bind:value={vs.content} required></textarea></label>

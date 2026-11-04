@@ -9,6 +9,8 @@
 	import YearSettingsPanel from '#lib/components/YearSettingsPanel.svelte';
 	import BasicSettingsPanel from '#lib/components/BasicSettingsPanel.svelte';
 	import BackupPanel from '#lib/components/BackupPanel.svelte';
+	import RetentionPanel from '#lib/components/RetentionPanel.svelte';
+	import IntegrationsPanel from '#lib/components/IntegrationsPanel.svelte';
 	import DmLinkPanel from '#lib/components/DmLinkPanel.svelte';
 	import { dm } from '#lib/registry/dm.svelte.ts';
 	import CodesPanel from '#lib/components/CodesPanel.svelte';
@@ -19,12 +21,12 @@
 
 	const GROUPS = [
 		{ title: '교회 설정', tabs: ['기본 설정', '연간 설정', '교회 조직표', '소그룹 편성'] },
-		{ title: '프로그램 설정', tabs: ['교인구분', '코드표', '확인 목록', '백업', '부서 관리 연결'] }
+		{ title: '프로그램 설정', tabs: ['교인구분', '코드표', '확인 목록', '백업', '외부 서비스', '부서 관리 연결'] }
 	];
 	const tab = $derived(GROUPS.some((g) => g.tabs.includes(page.url.searchParams.get('tab') ?? '')) ? page.url.searchParams.get('tab')! : '기본 설정');
 	const group = $derived(GROUPS.find((g) => g.tabs.includes(tab))!);
 	// '부서 관리 연결'은 부서 관리(dep-manage)가 같은 DB 에 있을 때(또는 구조가 달라 확인이 필요할 때) 최고관리자에게만 보인다.
-	const shownTabs = $derived(group.tabs.filter((t) => t !== '부서 관리 연결' || t === tab || (registry.isSuper && (dm.available || dm.reason === 'incompatible'))));
+	const shownTabs = $derived(group.tabs.filter((t) => t === '외부 서비스' ? registry.isSuper : t !== '부서 관리 연결' || t === tab || (registry.isSuper && (dm.available || dm.reason === 'incompatible'))));
 	function setTab(t: string) {
 		msg = '';
 		goto(hrefTo(`/settings?tab=${encodeURIComponent(t)}`), { replaceState: true, reset: false });
@@ -203,6 +205,9 @@
 		<CandidatesPanel />
 	{:else if tab === '백업'}
 		<BackupPanel />
+		<RetentionPanel />
+	{:else if tab === '외부 서비스'}
+		<IntegrationsPanel />
 	{:else if tab === '부서 관리 연결'}
 		{#if registry.isSuper}<DmLinkPanel />{:else}<div class="warn">부서 관리 연결은 최고관리자만 할 수 있습니다.</div>{/if}
 	{:else if tab === '연간 설정'}

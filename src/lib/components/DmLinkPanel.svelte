@@ -16,6 +16,8 @@
 	interface LinkRow { id: number; personId: string; personName: string; kind: Kind; dmId: number; eduDept: string | null; deptMismatch: boolean; dm: { name: string; dept: string; grade: string | null; status: string; birthDate: string | null } | null }
 	interface PreviewItem { linkId: number; kind: Kind; name: string; dept: string; changes: { field: string; label: string; from: string | null; to: string }[] }
 	interface Dept { id: number; name: string; grades: { id: number; label: string }[] }
+	interface PhotoItem { linkId: number; personId: string; name: string; kind: Kind; state: 'to_dm' | 'to_cm' | 'both' }
+	interface DeptItem { linkId: number; personId: string; name: string; dmDept: string; dmGrade: string | null; cmDept: string | null; ok: boolean; category: { from: string; to: string } | null; note?: string }
 
 	const KIND: Record<Kind, string> = { student: '학생', teacher: '교사' };
 	let busy = $state(false);
@@ -29,6 +31,23 @@
 	let off = $state<Record<string, boolean>>({}); // '확실' 줄에서 체크를 뺀 것
 	let addTo = $state<Record<string, { deptId: number; gradeId: number }>>({}); // 부서 관리에 추가할 때 고른 부서·학년
 	let prefixInput = $state(dm.prefix);
+	let photos = $state<{ dataDirFound: boolean; dataDir: string | null; gd: boolean; items: PhotoItem[] } | null>(null);
+	let dataDirInput = $state('');
+	let deptItems = $state<DeptItem[] | null>(null);
+	const loadPhotos = () => run(async () => { photos = await auth.api('GET', '/dm/photos/preview'); });
+	const syncPhotos = () => run(async () => {
+		const r = await auth.api<{ toDm: number; toCm: number; failed: string[] }>('POST', '/dm/photos/sync', {});
+		msg = `사진을 맞췄습니다. 교적 → 부서 관리 ${r.toDm}장, 부서 관리 → 교적 ${r.toCm}장${r.failed.length ? ` · 실패 ${r.failed.length}건: ${r.failed.join(' / ')}` : ''}`;
+		await registry.reload(); photos = await auth.api('GET', '/dm/photos/preview');
+	});
+	const saveDataDir = () => run(async () => { await auth.api('POST', '/dm/data-dir', { path: dataDirInput }); photos = await auth.api('GET', '/dm/photos/preview'); msg = dataDirInput ? '폴더를 저장했습니다.' : '자동으로 찾도록 되돌렸습니다.'; });
+	const loadDept = () => run(async () => { deptItems = (await auth.api<{ items: DeptItem[] }>('GET', '/dm/dept/preview')).items; });
+	const syncDept = () => run(async () => {
+		const r = await auth.api<{ synced: number }>('POST', '/dm/dept/sync', {});
+		msg = `${r.synced}명의 교육부서를 부서 관리에 맞췄습니다.`;
+		await registry.reload();
+		deptItems = (await auth.api<{ items: DeptItem[] }>('GET', '/dm/dept/preview')).items;
+	});
 
 	async function run(fn: () => Promise<void>) {
 		busy = true; msg = ''; err = '';
@@ -168,6 +187,58 @@
 			<div class="row" style="margin-top:.7rem;gap:.5rem">
 				<button type="button" onclick={applyPreview} disabled={busy}>{preview.length}명 모두 적용</button>
 				<button type="button" class="ghost" onclick={() => (preview = null)}>닫기</button>
+			</div>
+		{/if}
+	</section>
+
+	<section class="card">
+		<div class="card-head"><h2>사진 맞추기</h2><span class="sub">연결된 사람의 사진이 한쪽에만 있으면 다른 쪽으로 복사합니다. 양쪽에 있으면 그대로 둡니다.</span></div>
+		{#if photos === null}
+			<button type="button" onclick={loadPhotos} disabled={busy || !links.length}>사진 상태 확인</button>
+		{:else}
+			{#if !photos.dataDirFound}
+				<p class="warn">부서 관리의 파일 폴더(data)를 자동으로 찾지 못했습니다. 호스팅에서 부서 관리가 설치된 폴더의 <code>data</code> 폴더 전체 경로를 알려 주세요. (예: /home/아이디/www/dm/data)</p>
+				<div class="row" style="gap:.5rem"><input bind:value={dataDirInput} placeholder="/home/아이디/www/dm/data" style="max-width:26rem" /><button type="button" onclick={saveDataDir} disabled={busy || !dataDirInput}>저장</button></div>
+			{:else}
+				{@const toDm = photos.items.filter((i) => i.state === 'to_dm')}
+				{@const toCm = photos.items.filter((i) => i.state === 'to_cm')}
+				{@const both = photos.items.filter((i) => i.state === 'both')}
+				{#if !photos.items.length}
+					<p class="muted">사진이 있는 연결된 사람이 없습니다.</p>
+				{:else}
+					<p style="margin:0 0 .5rem">교적 → 부서 관리 <b>{toDm.length}장</b> · 부서 관리 → 교적 <b>{toCm.length}장</b> · 양쪽에 있어 그대로 둠 <b>{both.length}장</b></p>
+					{#if toDm.length || toCm.length}
+						<div style="overflow-x:auto"><table class="sm"><tbody>{#each [...toDm, ...toCm] as i (i.kind + i.linkId)}
+							<tr><td>{i.name}</td><td class="muted">{KIND[i.kind]}</td><td>{i.state === 'to_dm' ? '교적의 사진을 부서 관리로' : '부서 관리의 사진을 교적으로'}</td></tr>
+						{/each}</tbody></table></div>
+						{#if toDm.length && !photos.gd}<p class="warn">이 호스팅에는 이미지 기능(GD)이 없어 교적 → 부서 관리 복사는 실패할 수 있습니다.</p>{/if}
+						<div class="row" style="margin-top:.7rem;gap:.5rem"><button type="button" onclick={syncPhotos} disabled={busy}>{toDm.length + toCm.length}장 맞추기</button><button type="button" class="ghost" onclick={() => (photos = null)}>닫기</button></div>
+					{:else}
+						<p class="muted">맞출 사진이 없습니다.</p>
+					{/if}
+				{/if}
+			{/if}
+		{/if}
+	</section>
+
+	<section class="card">
+		<div class="card-head"><h2>부서·학년(승급) 맞추기</h2><span class="sub">부서와 학년은 부서 관리가 주인입니다. 학생이 승급해서 부서가 바뀌면 교적의 교육부서(와 교인구분)를 부서 관리에 맞춥니다.</span></div>
+		{#if deptItems === null}
+			<button type="button" onclick={loadDept} disabled={busy || !links.length}>어긋난 학생 확인</button>
+		{:else if !deptItems.length}
+			<p class="muted">맞출 것이 없습니다. 연결된 학생의 부서가 모두 같습니다.</p>
+			<button type="button" class="ghost" onclick={() => (deptItems = null)}>닫기</button>
+		{:else}
+			<div style="overflow-x:auto"><table class="sm">
+				<thead><tr><th>이름</th><th>교적의 교육부서</th><th>부서 관리의 부서·학년</th><th></th></tr></thead>
+				<tbody>{#each deptItems as d (d.linkId)}
+					<tr><td>{d.name}</td><td>{d.cmDept ?? '(없음)'}</td><td>{d.dmDept}{d.dmGrade ? ` · ${d.dmGrade}` : ''}{#if d.category}<div class="muted" style="font-size:.8rem">교인구분 {d.category.from} → {d.category.to}</div>{/if}</td>
+					<td>{#if d.ok}<span class="tag">맞춤</span>{:else}<small class="muted">{d.note}</small>{/if}</td></tr>
+				{/each}</tbody>
+			</table></div>
+			<div class="row" style="margin-top:.7rem;gap:.5rem">
+				<button type="button" onclick={syncDept} disabled={busy || !deptItems.some((d) => d.ok)}>{deptItems.filter((d) => d.ok).length}명 맞추기</button>
+				<button type="button" class="ghost" onclick={() => (deptItems = null)}>닫기</button>
 			</div>
 		{/if}
 	</section>

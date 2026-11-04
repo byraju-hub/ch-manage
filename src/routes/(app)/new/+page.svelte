@@ -125,7 +125,7 @@
 {#if !registry.perms.edit}
 	<div class="warn">수정 권한이 꺼져 있어 등록할 수 없습니다. (최고관리자에게 수정 권한을 받아야 합니다)</div>
 {:else}
-	<CardScan onresult={applyCard} />
+	{#if registry.features.ai}<CardScan onresult={applyCard} />{/if}
 	<p class="muted"><b class="req">*</b> 표시는 필수 항목입니다. 같은 이름·전화가 있으면 먼저 보여 줍니다.</p>
 	<form class="form card" onsubmit={submit}>
 		<PersonFields bind:f autoNote>

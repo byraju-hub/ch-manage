@@ -7,10 +7,11 @@
 	import { ageOf, ageText, fullAddress, officeTitle } from '#lib/registry/derive.ts';
 	import { withPdfStyle } from '#lib/pdf-style.ts';
 	import { certNo } from '#lib/registry/site-settings.ts';
+	import { auth } from '#lib/registry/auth.svelte.ts';
+	import { onMount, tick } from 'svelte';
 
 	// 문서 출력: 화면에서 미리 보고 → 인쇄 또는 PDF 내려받기. 출력할 때마다 접속기록(출력)과 발급번호를 남김
-	// [실제 시스템] 증명서 발급 대장을 따로 두고(발급번호·용도·발급자), 교회 직인 이미지를 넣습니다.
-	//              PDF는 지금처럼 브라우저에서 만들어도 되고, 서버에서 만들면 글꼴·서식이 더 일정합니다.
+	// 증명서 번호는 서버가 정하고 발급 대장(발급번호·종류·교인·용도·발급자)에 남깁니다. 직인 그림은 내려받기 권한이 있는 사람에게만 서버가 내려줍니다.
 	const DOCS = ['교적부', '교인증명서', '세례증명서', '기부금 영수증', '교인 요람', '생일 명단', '직분자 명단', '교회 조직표'] as const;
 	type Doc = (typeof DOCS)[number];
 	let doc = $state<Doc>((page.url.searchParams.get('doc') as Doc) ?? '교적부');
@@ -75,8 +76,17 @@
 		}
 		return out;
 	}
-	const issued = $derived(registry.d.accessLog.filter((l) => l.action === '출력' && l.at.startsWith(String(now.getFullYear()))).length);
-	const docNo = $derived(certNo(registry.certForm, now.getFullYear(), issued + 1));
+	// 발급 번호는 서버가 정한다(출력할 때마다 발급 대장에 남고, 올해 안에서 겹치지 않음). 미리 보이는 번호는 '다음 번호'.
+	let nextNo = $state('');
+	let issuedNo = $state(''); // 방금 발급한 번호 (문서나 사람을 바꾸기 전까지 그대로 보임)
+	let issueErr = $state('');
+	const docNo = $derived(issuedNo || nextNo || certNo(registry.certForm, now.getFullYear(), 1));
+	async function loadNext() {
+		if (auth.user?.is_demo || !registry.perms.export) return;
+		try { nextNo = (await auth.api<{ docNo: string }>('GET', '/certificates/next')).docNo; } catch { /* 번호 미리보기는 못 받아도 괜찮다 */ }
+	}
+	onMount(loadNext);
+	$effect(() => { void doc; void personId; void purpose; issuedNo = ''; issueErr = ''; });
 	const v = (x: unknown) => (x === null || x === undefined || x === '' ? '' : String(x));
 	const md = (iso: string | null) => (iso ? `${+iso.slice(5, 7)}월 ${+iso.slice(8, 10)}일` : '');
 	const ymd = (iso: string | null) => (iso ? `${iso.slice(0, 4)}. ${+iso.slice(5, 7)}. ${+iso.slice(8, 10)}.` : '');
@@ -120,14 +130,30 @@
 	const ready = $derived(!needsPerson || (!!p && (doc !== '세례증명서' || !!baptism) && (doc !== '기부금 영수증' || donTotal > 0)));
 	const fileName = $derived(`${doc}${p && needsPerson ? `-${p.name}` : doc === '생일 명단' ? `-${month}월` : ''}-${now.toISOString().slice(0, 10)}.pdf`);
 
-	function record() {
-		const tail = doc === '기부금 영수증' ? ` · ${docNo} · ${donYear}년` : needsPerson && doc !== '교적부' ? ` · ${docNo} · ${purpose}` : '';
+	const numbered = $derived(needsPerson && doc !== '교적부');
+	/** 출력을 기록한다. 번호가 붙는 증명서는 서버에서 번호를 받아 문서에 먼저 반영한다. 실패하면 false(출력하지 않음). */
+	async function record(): Promise<boolean> {
+		issueErr = '';
+		if (numbered && !auth.user?.is_demo) {
+			try {
+				const r = await auth.api<{ docNo: string }>('POST', '/certificates/issue', { kind: doc, person_id: p?.id ?? null, purpose: doc === '기부금 영수증' ? `${donYear}년` : purpose });
+				issuedNo = r.docNo;
+				await tick();
+				void loadNext();
+				return true;
+			} catch (e) {
+				issueErr = e instanceof Error ? e.message : '발급 번호를 받지 못했습니다.';
+				return false;
+			}
+		}
+		const tail = numbered ? ` · ${docNo} · ${doc === '기부금 영수증' ? donYear + '년' : purpose}` : '';
 		registry.log('출력', `${doc}${p && needsPerson ? ` · ${p.name}` : ''}${tail}`);
+		return true;
 	}
 	// 교회 조직표는 늘 A4 한 장에 나오도록 크기를 줄여서 맞춤
 	const onePage = $derived(doc === '교회 조직표');
-	function print() {
-		record();
+	async function print() {
+		if (!(await record())) return;
 		if (onePage && sheet) {
 			// 인쇄 영역(A4 297mm - 위아래 여백 24mm)에 들어가도록 비율을 계산해 잠시 축소
 			const pxPerMm = 96 / 25.4;
@@ -157,6 +183,7 @@
 		const el = sheet;
 		busy = true;
 		try {
+			if (!(await record())) return;
 			await withPdfStyle(el, async () => {
 				if (onePage) return pdfOnePage();
 				const html2pdf = (await import('html2pdf.js')).default;
@@ -167,7 +194,6 @@
 					.from(el)
 					.save();
 			});
-			record();
 		} finally {
 			busy = false;
 		}
@@ -193,6 +219,7 @@
 			{/if}
 			<span style="flex:1"></span>
 			<ExportButtons onprint={print} onpdf={pdf} disabled={!ready || !registry.perms.export} {busy} />
+			{#if issueErr}<p class="warn" style="margin:.5rem 0 0">{issueErr}</p>{/if}
 		</div>
 		{#if doc === '교인 요람' && consentOnly}<p class="muted" style="margin:0;font-size:.82rem">요람에는 '요람 공개'에 동의한 사람만 나옵니다. (일괄 동의를 받기 전이라 지금은 몇 명만 있습니다. 시험할 때는 체크를 풀어 보세요)</p>{/if}
 		{#if doc === '세례증명서' && p && !baptism}<p class="warn" style="margin:.4rem 0 0">이 교인은 세례(유아세례·입교) 기록이 없어 세례증명서를 만들 수 없습니다.</p>{/if}

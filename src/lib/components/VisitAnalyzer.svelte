@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { hrefTo } from '#lib/registry/paths.ts';
-	// 심방 녹음·문서를 올리면 분석해서 심방 기록 칸을 채워 줍니다. (서버: /api/visit-analyze)
+	import { auth } from '#lib/registry/auth.svelte.ts';
+	import { uploadChunks } from '#lib/registry/upload.ts';
+	// 심방 녹음·문서를 올리면 분석해서 심방 기록 칸을 채워 줍니다. (서버: /api/v1/visit-analyze, AI)
 	export interface Analysis { kind: string | null; content: string | null; scripture: string | null; hymn: string | null; follow_up: string | null; companions: string[] }
 	let { onresult }: { onresult: (r: Analysis) => void } = $props();
 
@@ -47,15 +48,13 @@
 		if (!file) return;
 		busy = true; err = ''; msg = ''; transcript = null;
 		try {
-			const fd = new FormData();
-			fd.append('file', file);
-			// [실제 시스템] 로그인 세션 토큰을 함께 보내 서버에서 심방 권한을 확인합니다.
-			const r = await fetch(hrefTo('/api/v1/visit-analyze'), { method: 'POST', body: fd, headers: { 'x-visit-analyze': '1' } });
-			const j = await r.json();
-			if (!r.ok) throw new Error(j.error ?? '분석에 실패했습니다.');
+			msg = '파일을 올리는 중…';
+			const id = await uploadChunks(file, (pct) => { msg = `파일을 올리는 중… ${pct}%`; });
+			msg = '분석하는 중입니다. 녹음이 길면 몇 분 걸릴 수 있습니다…';
+			const j = await auth.api<{ result: Analysis; transcript: string | null }>('POST', '/visit-analyze', { id, name: file.name });
 			onresult(j.result);
 			transcript = j.transcript;
-			msg = j.demo ? `${j.note}` : '분석 결과를 아래 칸에 채웠습니다. 내용을 확인하고 고쳐서 등록하세요.';
+			msg = '분석 결과를 아래 칸에 채웠습니다. 내용을 확인하고 고쳐서 등록하세요.';
 		} catch (e) {
 			err = e instanceof Error ? e.message : '분석에 실패했습니다.';
 		} finally {
@@ -67,7 +66,7 @@
 <div class="analyzer">
 	<div class="row" style="justify-content:space-between;flex-wrap:wrap">
 		<b>녹음·문서로 채우기 <span class="tag part">AI 분석</span></b>
-		<span class="muted" style="font-size:.78rem">녹음(m4a·mp3·wav) · PDF · 텍스트 / 24MB 이하</span>
+		<span class="muted" style="font-size:.78rem">녹음(m4a·mp3·wav) · PDF · 텍스트 / 14MB 이하</span>
 	</div>
 	{#if canRecord}
 		<div class="row" style="margin-top:.5rem">

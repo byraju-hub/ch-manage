@@ -133,7 +133,7 @@
 
 	// ---- 일괄 수정: 검색 결과에서 체크한 교인을 한꺼번에 (수정 권한이 있을 때만) ----
 	// 문자 보내기: A 등급만 (검색 결과 전체에게. 수신 거부·번호 없음은 창에서 자동 제외)
-	const canSms = $derived(registry.me?.status === '사용' && registry.me?.grade === 'A');
+	const canSms = $derived(registry.me?.status === '사용' && registry.me?.grade === 'A' && registry.features.sms);
 	let smsOpen = $state(false);
 	// 평소에는 접혀 있고, 검색창 옆 '일괄 수정' 버튼을 누르면 펼쳐짐 (체크칸도 그때만 보임)
 	let bulkOpen = $state(false);

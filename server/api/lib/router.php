@@ -11,7 +11,7 @@ $GLOBALS['cm_routes'] = [];
 
 function route(string $method, string $pattern, callable $handler): void
 {
-    $rx = preg_replace(['/\{id\}/', '/\{grade\}/', '/\{uuid\}/', '/\{name\}/'], ['(\d+)', '([ABCD])', '([0-9a-fA-F-]{36})', '(logo|seal|favicon)'], $pattern);
+    $rx = preg_replace(['/\{id\}/', '/\{grade\}/', '/\{uuid\}/', '/\{name\}/', '/\{bname\}/'], ['(\d+)', '([ABCD])', '([0-9a-fA-F-]{36})', '(logo|seal|favicon)', '(cm-[a-z0-9.-]+)'], $pattern);
     $GLOBALS['cm_routes'][] = [$method, '#^' . $rx . '$#', $handler];
 }
 
@@ -50,7 +50,7 @@ function guard_demo(string $method, string $path): void
     if ($method !== 'GET' && $method !== 'HEAD' && $path !== '/auth/logout') {
         json_fail('demo_readonly', '체험 계정은 보기만 할 수 있어요. 저장하거나 바꿀 수는 없어요.', 403);
     }
-    if (preg_match('#^/users(/|$)#', $path)) {
+    if (preg_match('#^/(users|backup|integrations|retention|sms/balance)(/|$)#', $path)) {
         json_fail('demo_readonly', '체험 계정에서는 볼 수 없는 화면이에요.', 403);
     }
 }

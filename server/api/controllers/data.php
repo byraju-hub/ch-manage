@@ -12,6 +12,12 @@ route('GET', '/bootstrap', function () {
 /** 서버 자료의 버전. 다른 사람이 저장하면 올라간다. 화면이 가끔 물어보고, 달라졌으면 다시 받는다. */
 route('GET', '/version', function () {
     require_user();
+    // 자동 백업 때가 되었으면, 응답을 먼저 보낸 뒤에 백업한다.
+    register_shutdown_function(function () {
+        if (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
+        backup_maybe_run();
+        retention_maybe_run();
+    });
     json_out(['version' => data_version()]);
 });
 

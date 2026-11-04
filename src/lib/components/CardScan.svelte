@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { hrefTo } from '#lib/registry/paths.ts';
-	// 교인 등록카드를 찍거나 사진을 올리면 서버(/api/card-scan)가 읽어서 등록 칸을 채움
+	import { auth } from '#lib/registry/auth.svelte.ts';
+	import { uploadChunks } from '#lib/registry/upload.ts';
+	// 교인 등록카드를 찍거나 사진을 올리면 서버(/api/v1/card-scan, AI)가 읽어서 등록 칸을 채움
 	// 휴대폰에서는 '카드 촬영'을 누르면 바로 카메라가 열림. 사진은 보내기 전에 줄여서 보냄 (서버에 저장하지 않음)
 	export type CardResult = Record<string, any>;
 	let { onresult }: { onresult: (r: CardResult) => string[] } = $props();
@@ -40,14 +41,13 @@
 			const blob = await shrink(file);
 			if (preview) URL.revokeObjectURL(preview);
 			preview = URL.createObjectURL(blob);
-			const fd = new FormData();
-			fd.append('file', blob, 'card.jpg');
-			const r = await fetch(hrefTo('/api/v1/card-scan'), { method: 'POST', body: fd, headers: { 'x-card-scan': '1' } });
-			const data = await r.json().catch(() => ({ error: '서버 응답을 읽을 수 없습니다.' }));
-			if (!r.ok || data.error) throw new Error(data.error ?? `분석 실패 (${r.status})`);
+			msg = '사진을 올리는 중…';
+			const id = await uploadChunks(blob);
+			msg = '카드를 읽는 중입니다. 잠시 걸립니다…';
+			const data = await auth.api<{ result: CardResult }>('POST', '/card-scan', { id });
 			filled = onresult(data.result);
 			uncertain = (data.result?.uncertain ?? []).map((k: string) => LABEL[k] ?? k);
-			msg = data.demo ? data.note : filled.length ? '카드 내용을 아래 칸에 채웠습니다. 틀린 곳이 없는지 꼭 확인해 주세요.' : '카드에서 읽은 내용이 없습니다. 더 밝고 반듯하게 다시 찍어 주세요.';
+			msg = filled.length ? '카드 내용을 아래 칸에 채웠습니다. 틀린 곳이 없는지 꼭 확인해 주세요.' : '카드에서 읽은 내용이 없습니다. 더 밝고 반듯하게 다시 찍어 주세요.';
 		} catch (e2) {
 			err = e2 instanceof Error ? e2.message : '분석 중 오류가 났습니다.';
 		} finally {
