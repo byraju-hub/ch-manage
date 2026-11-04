@@ -441,7 +441,27 @@
 	</div>
 </section>
 
+<a class="manual-banner" href={hrefTo('/manual')}>
+	<span class="mb-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 016.5 3H20v15H6.5A2.5 2.5 0 004 20.5v-15z" /><path d="M4 20.5A2.5 2.5 0 016.5 18H20v3H6.5A2.5 2.5 0 014 20.5z" /><path d="M9 7.5h7M9 11h5" /></svg></span>
+	<span class="mb-tx"><b>프로그램 매뉴얼</b><small>처음 쓰는 방법부터 출석·심방·백업·문서 출력까지, 화면 순서대로 정리했어요</small></span>
+	<span class="mb-go">매뉴얼 보기<i aria-hidden="true">→</i></span>
+</a>
+
 <style>
+	/* 프로그램 매뉴얼 배너: 바로 가기 아래의 큰 버튼 */
+	.manual-banner { position: relative; overflow: hidden; display: flex; align-items: center; gap: 1rem; margin-top: 1.1rem; padding: 1.1rem 1.4rem; border-radius: 18px; color: #fff; text-decoration: none;
+		background: radial-gradient(110% 180% at 100% 0%, rgba(20, 180, 174, 0.6), transparent 55%), linear-gradient(120deg, var(--navy), #4558ae); box-shadow: var(--shadow-md); transition: transform 0.2s var(--ease), box-shadow 0.2s; }
+	.manual-banner::after { content: ''; position: absolute; right: -40px; bottom: -60px; width: 190px; height: 190px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); }
+	.manual-banner:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(43, 62, 149, 0.35); text-decoration: none; color: #fff; }
+	.manual-banner .mb-ic { flex: none; width: 52px; height: 52px; border-radius: 15px; display: grid; place-items: center; background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.32); }
+	.manual-banner .mb-ic svg { width: 28px; height: 28px; fill: none; stroke: #fff; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+	.manual-banner .mb-tx { flex: 1; display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; position: relative; z-index: 1; }
+	.manual-banner .mb-tx b { color: #fff; font-size: 1.15rem; }
+	.manual-banner .mb-tx small { color: rgba(255, 255, 255, 0.85); font-size: 0.86rem; line-height: 1.45; }
+	.manual-banner .mb-go { flex: none; position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1.1rem; border-radius: 999px; background: #fff; color: var(--navy); font-weight: 800; font-size: 0.92rem; }
+	.manual-banner .mb-go i { font-style: normal; transition: transform 0.2s var(--ease); }
+	.manual-banner:hover .mb-go i { transform: translateX(4px); }
+	@media (max-width: 640px) { .manual-banner { flex-wrap: wrap; padding: 1rem; } .manual-banner .mb-go { width: 100%; justify-content: center; } }
 	/* 처리할 일 알림: 주황·노랑으로 천천히 깜빡임 (움직임을 줄이도록 설정한 기기에서는 깜빡이지 않음) */
 	.todo-alert { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.9rem; margin-bottom: 0.9rem; padding: 0.7rem 1rem; border-radius: 14px; border: 1.5px solid #f0642a; background: #fff4e0; color: #7a3410; animation: todo-blink 1.6s ease-in-out infinite; }
 	.todo-alert .bell { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #f0642a; color: #fff; }
