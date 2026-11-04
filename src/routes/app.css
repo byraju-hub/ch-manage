@@ -139,7 +139,12 @@ button.sm { padding: 0.35rem 0.75rem; font-size: 0.82rem; }
 .site-footer .foot { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1.25rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; font-size: 0.84rem; color: var(--muted); }
 .site-footer b { color: var(--text); }
 /* 푸터 왼쪽: 교회 이름(상단과 같은 글꼴) + 설명을 한 줄로 */
-.foot-brand { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.foot-brand { display: flex; flex-direction: column; align-items: flex-start; gap: 0.15rem; }
+.foot-note { font-size: 0.74rem; color: #a3a8c0; font-weight: 400; }
+.foot-copy { display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem; text-align: right; padding-right: 3.6rem; /* 오른쪽 아래 '맨 위로' 버튼에 가리지 않게 */ font-size: 0.78rem; color: #8b91ad; }
+.foot-copy small { font-size: 0.68rem; color: #b3b8cd; }
+.foot-copy small a { color: inherit; }
+@media (max-width: 640px) { .foot-copy { align-items: flex-start; text-align: left; padding-right: 0; } }
 .foot-brand b { font-family: 'Gowun Batang', 'Noto Serif KR', serif; font-weight: 700; font-size: 1.02rem; -webkit-text-stroke: 0.02em currentColor; letter-spacing: -0.01em; }
 .site-footer p { margin: 0.2rem 0 0; }
 

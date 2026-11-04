@@ -361,9 +361,12 @@
 		<div class="foot">
 			<div class="foot-brand">
 				<b>{registry.churchInfo.name} 교적 관리</b>
-				<span>교회 교적 관리 프로그램 · <a href="https://github.com/byraju-hub/ch-manage" target="_blank" rel="noopener">ch-manage</a></span>
+				<small class="foot-note">모든 조회와 수정은 접속기록에 남습니다.</small>
 			</div>
-			<p class="muted">GNU AGPL-3.0 · 제작 <a href="https://github.com/byraju-hub" target="_blank" rel="noopener">byraju</a></p>
+			<div class="foot-copy">
+				<span>ⓒ {new Date().getFullYear()} {registry.churchInfo.name}. All Rights Reserved.</span>
+				<small>프로그램 <a href="https://github.com/byraju-hub/ch-manage" target="_blank" rel="noopener">ch-manage</a> · GNU AGPL-3.0</small>
+			</div>
 		</div>
 	</footer>
 	{#if sync.status === 'saving'}<div class="saving" role="status">저장 중…</div>{/if}
