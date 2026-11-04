@@ -1,7 +1,7 @@
 {
 	"name": "ch-manage",
 	"private": true,
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"description": "교회 교적 관리 시스템 (SvelteKit 정적 화면 + PHP + MariaDB)",
 	"license": "AGPL-3.0-only",
 	"author": "byraju",

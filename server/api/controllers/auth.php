@@ -80,6 +80,7 @@ route('POST', '/auth/login', function () {
 
     session_regenerate_id(true); // 세션 고정 공격 방지
     $_SESSION['uid'] = (int)$u['id'];
+    $_SESSION['epoch'] = (int)($u['session_epoch'] ?? 0);
     $_SESSION['seen'] = time();
     unset($_SESSION['csrf']);
     q('UPDATE ' . t('users') . ' SET last_login_at = NOW() WHERE id = ?', [$u['id']]);
@@ -140,7 +141,10 @@ route('POST', '/auth/password', function () {
     }
     check_new_password($new);
     if ($new === $cur) json_fail('invalid', '지금 쓰는 비밀번호와 다르게 만들어 주세요.', 422);
-    q('UPDATE ' . t('users') . ' SET password_hash = ?, must_change_password = 0 WHERE id = ?', [password_hash($new, PASSWORD_DEFAULT), $u['id']]);
+    // 번호를 올려서 이 사용자의 다른 로그인(다른 기기·브라우저)을 모두 끊고, 지금 쓰는 이 세션만 새 번호로 이어 간다.
+    q('UPDATE ' . t('users') . ' SET password_hash = ?, must_change_password = 0, session_epoch = session_epoch + 1 WHERE id = ?', [password_hash($new, PASSWORD_DEFAULT), $u['id']]);
+    $_SESSION['epoch'] = (int)val('SELECT session_epoch FROM ' . t('users') . ' WHERE id = ?', [$u['id']]);
+    session_regenerate_id(true);
     audit('비밀번호 변경', $u['name']);
     json_out(null);
 });

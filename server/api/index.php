@@ -25,13 +25,24 @@ foreach (['auth', 'users', 'data', 'dm', 'leader', 'backup', 'services'] as $c) 
     require __DIR__ . '/controllers/' . $c . '.php';
 }
 
-route('GET', '/system/status', function () {
+$schemaNow = current_schema_version(db(), cm_config()['prefix']);
+$schemaLatest = latest_schema_version(CM_ROOT . '/migrations');
+
+route('GET', '/system/status', function () use ($schemaNow, $schemaLatest) {
     json_out([
         'installed' => true,
         'version' => CM_VERSION,
-        'schema' => current_schema_version(db(), cm_config()['prefix']),
-        'latest_schema' => latest_schema_version(CM_ROOT . '/migrations'),
+        'schema' => $schemaNow,
+        'latest_schema' => $schemaLatest,
+        'update_pending' => $schemaNow < $schemaLatest,
+        'finalize_needed' => cm_htaccess_outdated(), // /install/ 을 한 번 열어야 하는 .htaccess 규칙이 있는가
     ]);
 });
+
+// 새 버전 파일을 올렸는데 /install/ 을 아직 열지 않아 데이터베이스가 옛 구조이면, 오류가 나기 전에 안내한다.
+if ($schemaNow < $schemaLatest && !in_array($path, ['/system/status', '/auth/me', '/auth/logout'], true)) {
+    $base = rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
+    json_fail('update_pending', '새 버전 파일이 올라왔지만 아직 마무리하지 않았습니다. 관리자가 주소창에 ' . $base . '/install/ 을 한 번 열어야 쓸 수 있어요.', 503);
+}
 
 dispatch($path);

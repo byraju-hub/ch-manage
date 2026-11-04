@@ -170,6 +170,15 @@
 	const known = ['/', '/members', '/new', '/newcomers', '/households', '/communities', '/attendance', '/visits', '/orgs', '/stats', '/reports', '/documents', '/admin', '/settings'];
 	const isCard = $derived(path !== '/' && !known.some((p) => path === p || path.startsWith(p + '/')));
 	const showAdmin = $derived(registry.perms.admin || registry.isSuper);
+
+	// 새 버전 파일을 올린 뒤 /install/ 을 열지 않아 .htaccess 규칙(https 이동·보안 헤더)이 빠졌으면 최고관리자에게 알린다.
+	let sysWarn = $state(false);
+	let sysChecked = false;
+	$effect(() => {
+		if (sysChecked || !unlocked || !auth.user?.is_super || auth.user.is_demo) return;
+		sysChecked = true;
+		auth.api<{ finalize_needed?: boolean }>('GET', '/system/status').then((s) => (sysWarn = !!s.finalize_needed)).catch(() => {});
+	});
 </script>
 
 <svelte:window bind:scrollY />
@@ -231,6 +240,7 @@
 											<input type="password" bind:value={pwf.next} placeholder="새 비밀번호 (8자 이상)" autocomplete="new-password" minlength="8" required style="margin:.2rem 0" />
 											<input type="password" bind:value={pwf.next2} placeholder="새 비밀번호 확인" autocomplete="new-password" required style="margin:.2rem 0" />
 											{#if loginMsg}<p style="color:#a83c10;font-size:.82rem;margin:.3rem 0">{loginMsg}</p>{/if}
+											<p class="muted" style="font-size:.78rem;margin:.2rem 0">바꾸면 다른 기기에서 로그인한 것은 풀려요.</p>
 											<button type="submit" class="sm" disabled={busy}>바꾸기</button>
 											<button type="button" class="ghost sm" onclick={() => { pwOpen = false; loginMsg = ''; }}>취소</button>
 										</form>
@@ -249,6 +259,7 @@
 	</header>
 
 	<main>
+		{#if unlocked && sysWarn}<p class="sys-warn" role="alert"><b>마무리가 덜 된 것이 있어요.</b> 새 버전 파일을 올린 뒤 아직 설치 화면을 열지 않아서, 보안 설정(https 이동·보안 헤더)이 적용되지 않았어요. <a href={hrefTo('/install/')} data-sveltekit-reload>여기를 눌러</a> 한 번 열어 주세요. (열기만 하면 자동으로 마무리돼요)</p>{/if}
 		{#if unlocked && auth.user?.is_demo}<p class="demo-bar" role="status">체험 계정으로 보고 있어요. 모든 화면을 볼 수 있지만, 저장하거나 바꿀 수는 없어요. (바꾼 것은 화면에서만 바뀌고 새로고침하면 돌아와요)</p>{/if}
 		{#if !auth.ready}
 			<div class="card lock"><p class="muted">불러오는 중…</p></div>
@@ -341,7 +352,7 @@
 
 	{#if scrollY > 400}
 		<!-- 스크롤을 내리면 오른쪽 아래에 '맨 위로' 버튼 -->
-		<button type="button" class="to-top" onclick={toTop} aria-label="맨 위로" title="맨 위로">
+		<button type="button" class="to-top" class:above-save={isLeader} onclick={toTop} aria-label="맨 위로" title="맨 위로">
 			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5" /><path d="M5 12l7-7 7 7" /></svg>
 		</button>
 	{/if}
@@ -360,6 +371,8 @@
 
 <style>
 	.demo-hint { background: var(--accent-soft, #e6eafa); border-radius: 10px; padding: 8px 12px; font-size: 0.85rem; text-align: center; margin: 0.8rem 0 0; }
+	.sys-warn { background: #fff2eb; border: 1px solid #fde0d0; color: #7a3410; border-radius: 10px; padding: 10px 14px; font-size: 0.9rem; margin: 0 0 0.8rem; line-height: 1.6; }
+	.sys-warn a { font-weight: 700; text-decoration: underline; }
 	.demo-bar { background: #e8f1ff; border: 1px solid #b9d2ff; color: #1b4aa8; border-radius: 10px; padding: 8px 14px; font-weight: 600; text-align: center; font-size: 0.88rem; margin: 0 0 0.8rem; }
 	.to-top {
 		position: fixed; right: 1.2rem; bottom: calc(1.2rem + env(safe-area-inset-bottom)); z-index: 35;
@@ -370,5 +383,7 @@
 	@media (max-width: 960px) {
 		.to-top { bottom: calc(4.6rem + env(safe-area-inset-bottom)); right: 0.9rem; width: 42px; height: 42px; }
 	}
+	/* 소그룹 인도자 화면은 아래에 '저장' 줄이 고정되어 있으므로, 맨 위로 버튼을 그 위로 올려 가리지 않게 한다 */
+	.to-top.above-save { bottom: calc(5.6rem + env(safe-area-inset-bottom)); }
 	.saving { position: fixed; left: 1rem; bottom: 1rem; z-index: 60; padding: 0.35rem 0.8rem; border-radius: 999px; background: rgba(23, 32, 42, 0.86); color: #fff; font-size: 0.8rem; }
 </style>

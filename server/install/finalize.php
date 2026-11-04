@@ -14,6 +14,30 @@ const CM_HTTPS_RULES = "# ch-manage-https: http 로 들어오면 https 로\n"
     . "RewriteCond %{HTTP_HOST} !^(localhost|127\\.0\\.0\\.1)(:\\d+)?$ [NC]\n"
     . "RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]\n";
 
+/** 보안 헤더: 다른 사이트가 이 화면을 액자처럼 끼워 넣지 못하게 하고, 브라우저가 파일 종류를 멋대로 추측하지 못하게 한다. */
+const CM_HEADER_RULES = "# ch-manage-headers: 보안 헤더
+"
+    . "<IfModule mod_headers.c>
+"
+    . "  Header always set X-Content-Type-Options \"nosniff\"
+"
+    . "  Header always set X-Frame-Options \"SAMEORIGIN\"
+"
+    . "  Header always set Referrer-Policy \"strict-origin-when-cross-origin\"
+"
+    . "  Header always set Permissions-Policy \"camera=(self), microphone=(self), geolocation=()\"
+"
+    . "  Header always set Content-Security-Policy \"frame-ancestors 'self'; base-uri 'self'; object-src 'none'\"
+"
+    . "  <IfModule mod_authz_core.c>
+"
+    . "    Header always set Strict-Transport-Security \"max-age=15552000\" \"expr=%{HTTPS} == 'on'\"
+"
+    . "  </IfModule>
+"
+    . "</IfModule>
+";
+
 /** 이 설치 화면이 있는 폴더의 주소. 사이트 맨 위에 설치했다면 빈 문자열. 예: /cm */
 function cm_base_path(): string
 {
@@ -26,7 +50,7 @@ function cm_needs_finalize(): bool
     $index = CM_ROOT . '/index.html';
     if (!is_file($index)) return false;
     $ht = CM_ROOT . '/.htaccess';
-    return str_contains((string)file_get_contents($index), CM_PLACEHOLDER) || !is_file($ht) || !str_contains((string)file_get_contents($ht), 'ch-manage-https');
+    return str_contains((string)file_get_contents($index), CM_PLACEHOLDER) || !is_file($ht) || !str_contains((string)file_get_contents($ht), 'ch-manage-https') || !str_contains((string)file_get_contents($ht), 'ch-manage-headers');
 }
 
 /** 화면 파일 안의 자리표시자를 실제 폴더 주소로 바꾸고, 주소 처리용 .htaccess 를 만든다. 바꾼 파일 수를 돌려준다. */
@@ -63,13 +87,18 @@ function cm_finalize_web(): int
             . "RewriteRule ^ index.html [L]\n\n"
             . "<IfModule mod_headers.c>\n"
             . "  <FilesMatch \"\\.html$\">\n    Header set Cache-Control \"no-cache\"\n  </FilesMatch>\n"
-            . "</IfModule>\n";
+            . "</IfModule>\n\n"
+            . CM_HEADER_RULES;
         @file_put_contents($ht, $rules, LOCK_EX);
     } elseif (!str_contains((string)file_get_contents($ht), 'ch-manage-https')) {
         // 예전 버전이 만든 .htaccess 에는 https 규칙이 없으므로, 한 번만 끼워 넣는다. (직접 고친 내용은 그대로 둔다.)
         $cur = (string)file_get_contents($ht);
         $new = preg_replace('/^RewriteEngine On\R/mi', '$0' . addcslashes(CM_HTTPS_RULES, '\\$'), $cur, 1, $n);
         if ($n === 1) @file_put_contents($ht, $new, LOCK_EX);
+    }
+    // 보안 헤더 규칙도 없으면 끝에 한 번 덧붙인다.
+    if (is_file($ht) && !str_contains((string)file_get_contents($ht), 'ch-manage-headers')) {
+        @file_put_contents($ht, "\n" . CM_HEADER_RULES, FILE_APPEND | LOCK_EX);
     }
     return $changed;
 }

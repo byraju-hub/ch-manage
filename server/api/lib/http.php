@@ -3,6 +3,28 @@ declare(strict_types=1);
 
 // 요청과 응답 도우미.
 
+/** 모든 API 응답에 붙이는 보안 헤더. (사이트 폴더의 .htaccess 에도 같은 것이 있지만, 그 모듈이 없는 호스팅을 위해 여기서도 보낸다.) */
+function cm_security_headers(): void
+{
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: SAMEORIGIN');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header("Content-Security-Policy: frame-ancestors 'self'");
+    header('Permissions-Policy: camera=(self), microphone=(self), geolocation=()');
+    if ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')) {
+        header('Strict-Transport-Security: max-age=15552000');
+    }
+}
+
+/** 설치 화면(/install/)을 열어 마무리해야 하는 .htaccess 규칙(https 이동·보안 헤더)이 빠져 있는가 */
+function cm_htaccess_outdated(): bool
+{
+    $ht = CM_ROOT . '/.htaccess';
+    if (!is_file($ht)) return true;
+    $s = (string)file_get_contents($ht);
+    return !str_contains($s, 'ch-manage-https') || !str_contains($s, 'ch-manage-headers');
+}
+
 function json_out(mixed $data = null, int $status = 200): never
 {
     http_response_code($status);

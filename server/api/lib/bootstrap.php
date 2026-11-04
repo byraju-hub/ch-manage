@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 // ch-manage API 공통 시작 파일. 모든 요청이 api/index.php 를 거쳐 여기로 온다.
 
-const CM_VERSION = '0.2.0';
+const CM_VERSION = '0.2.1';
 define('CM_API_DIR', dirname(__DIR__));
 define('CM_ROOT', dirname(CM_API_DIR)); // 사이트 폴더 (예: /cm)
 define('CM_DATA', CM_ROOT . '/data');   // 설정·업로드·로그. 웹에서 직접 열리지 않는다.
@@ -13,6 +13,7 @@ mb_internal_encoding('UTF-8');
 ini_set('display_errors', '0');
 
 require __DIR__ . '/http.php';
+cm_security_headers();
 require __DIR__ . '/db.php';
 require __DIR__ . '/router.php';
 require __DIR__ . '/util.php';

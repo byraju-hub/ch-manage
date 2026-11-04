@@ -80,6 +80,11 @@ function current_user(): ?array
         unset($_SESSION['uid']);
         return $u = null;
     }
+    // 비밀번호를 바꾼 뒤에는 그 전에 로그인한 다른 기기의 세션이 끝난다.
+    if ((int)($_SESSION['epoch'] ?? 0) !== (int)($row['session_epoch'] ?? 0)) {
+        $_SESSION = [];
+        return $u = null;
+    }
     return $u = $row;
 }
 

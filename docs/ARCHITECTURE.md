@@ -132,6 +132,14 @@ server/
 
 ---
 
+## 7-2. 보안과 업데이트 안내
+
+- **세션 끊기**: `users.session_epoch` 를 비밀번호 변경·임시 비밀번호 발급 때 올리고, 로그인할 때 세션에 적은 값(`$_SESSION['epoch']`)과 요청마다 비교한다(`current_user()`). 값이 다르면 그 세션은 로그아웃. 비밀번호를 바꾼 그 세션만 새 값으로 이어 가고 세션 번호도 새로 받는다.
+- **보안 헤더**: `X-Content-Type-Options`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy`, `Permissions-Policy`(카메라·마이크는 같은 사이트만), `CSP frame-ancestors 'self'`, https 일 때 `HSTS`. 사이트 폴더의 `.htaccess`(`ch-manage-headers` 블록, `/install/` 이 한 번 덧붙임)와 API 응답(`cm_security_headers()`) 양쪽에 둔다. 화면 쪽 `script-src` 는 SvelteKit 이 인라인 스크립트를 넣으므로 제한하지 않는다.
+- **업데이트 마무리 안내**: `api/index.php` 가 DB 의 `schema_version` 이 `migrations/` 의 최신 번호보다 낮으면 `/system/status`·`/auth/me`·`/auth/logout` 외 모두 503 `update_pending`(설치 화면 주소 포함)으로 막는다. `/system/status` 의 `finalize_needed` 는 `.htaccess` 에 규칙 표시가 빠졌을 때 true 이고, 최고관리자 화면 위에 안내를 띄운다.
+
+---
+
 ## 8. dep-manage 와 함께 쓰기
 
 같은 교회가 두 프로그램을 함께 쓰면 교육부서(유치부·유초등부·중고등부·청년부) 학생이 양쪽에 있다.

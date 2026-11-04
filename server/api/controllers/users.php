@@ -90,7 +90,7 @@ route('POST', '/users/{id}/reset-password', function (int $id) {
     $u = find_user($id);
     if ($id === (int)$me['id']) json_fail('forbidden', '내 비밀번호는 \'비밀번호 바꾸기\'로 바꿔 주세요.', 403);
     $tmp = temp_password();
-    q('UPDATE ' . t('users') . ' SET password_hash = ?, must_change_password = 1 WHERE id = ?', [password_hash($tmp, PASSWORD_DEFAULT), $id]);
+    q('UPDATE ' . t('users') . ' SET password_hash = ?, must_change_password = 1, session_epoch = session_epoch + 1 WHERE id = ?', [password_hash($tmp, PASSWORD_DEFAULT), $id]);
     q('DELETE FROM ' . t('login_attempts') . ' WHERE login_id = ?', [$u['login_id']]);
     audit('임시 비밀번호 발급', $u['name']);
     json_out(['tempPassword' => $tmp]);

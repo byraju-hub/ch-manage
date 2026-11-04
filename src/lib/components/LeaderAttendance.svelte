@@ -23,6 +23,27 @@
 	let err = $state('');
 	// 로그인이 풀린 채로 저장을 누르면, 적어 둔 내용을 지키고 비밀번호만 다시 받는다
 	let relogin = $state(false);
+
+	// 비밀번호 바꾸기 (인도자는 교적 화면의 이름 메뉴가 없으므로 이 화면에서)
+	let pwOpen = $state(false);
+	let pwf = $state({ current: '', next: '', next2: '' });
+	let pwMsg = $state('');
+	let pwOk = $state(false);
+	let pwBusy = $state(false);
+	async function changePw(e: SubmitEvent) {
+		e.preventDefault();
+		pwMsg = ''; pwOk = false;
+		if (pwf.next !== pwf.next2) { pwMsg = '새 비밀번호가 서로 일치하지 않아요.'; return; }
+		pwBusy = true;
+		try {
+			await auth.changePassword(pwf.current, pwf.next);
+			pwf = { current: '', next: '', next2: '' };
+			pwOk = true; pwMsg = '비밀번호를 바꿨어요. 다른 기기에서는 다시 로그인해야 해요.';
+			pwOpen = false;
+		} catch (err) {
+			pwMsg = err instanceof Error ? err.message : '비밀번호를 바꾸지 못했어요.';
+		} finally { pwBusy = false; }
+	}
 	let pw = $state('');
 
 	const md = (iso: string) => `${+iso.slice(5, 7)}월 ${+iso.slice(8, 10)}일`;
@@ -138,8 +159,22 @@
 			<h1>출석 체크</h1>
 			<p class="who">{info?.name ?? auth.user?.name}님 · {info?.unit ?? '소그룹'} 인도자</p>
 		</div>
-		<button type="button" class="ghost sm" onclick={onlogout}>로그아웃</button>
+		<div class="acts">
+			<button type="button" class="ghost sm" onclick={() => { pwOpen = !pwOpen; pwMsg = ''; }}>비밀번호 바꾸기</button>
+			<button type="button" class="ghost sm" onclick={onlogout}>로그아웃</button>
+		</div>
 	</div>
+	{#if pwOpen}
+		<form class="card pwform" onsubmit={changePw}>
+			<label>현재 비밀번호<input type="password" bind:value={pwf.current} autocomplete="current-password" required /></label>
+			<label>새 비밀번호 <small>(8자 이상)</small><input type="password" bind:value={pwf.next} autocomplete="new-password" minlength="8" required /></label>
+			<label>새 비밀번호 확인<input type="password" bind:value={pwf.next2} autocomplete="new-password" required /></label>
+			{#if pwMsg}<p class="hint" role="alert">{pwMsg}</p>{/if}
+			<div class="pwbtns"><button type="submit" disabled={pwBusy}>바꾸기</button><button type="button" class="ghost" onclick={() => { pwOpen = false; pwMsg = ''; }}>취소</button></div>
+			<p class="muted note">바꾸면 다른 기기(휴대폰·컴퓨터)에서 로그인한 것은 모두 풀려요.</p>
+		</form>
+	{/if}
+	{#if pwOk && pwMsg}<p class="okmsg" role="status">{pwMsg}</p>{/if}
 
 	{#if info && !info.linked}
 		<div class="card empty"><b>아직 연결된 교인이 없어요.</b><br />최고관리자에게 "내 계정을 교인과 연결해 달라"고 요청해 주세요.</div>
@@ -219,9 +254,16 @@
 	.leader { max-width: 720px; margin: 0 auto; padding: 0.4rem 0.2rem 6rem; }
 	.top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.8rem; margin-bottom: 0.6rem; }
 	h1 { margin: 0; font-size: 1.9rem; }
+	.acts { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: flex-end; }
+	.pwform { display: flex; flex-direction: column; gap: 0.6rem; margin: 0.4rem 0 0.8rem; padding: 1rem; }
+	.pwform label { margin: 0; }
+	.pwform input { font-size: 1.05rem; padding: 0.7rem 0.9rem; border-radius: 14px; }
+	.pwbtns { display: flex; gap: 0.5rem; }
+	.pwform .note { margin: 0; font-size: 0.82rem; }
+	.okmsg { margin: 0.4rem 0 0.8rem; padding: 0.7rem 1rem; border-radius: 14px; background: #e8f7f6; border: 1px solid #cbefec; }
 	.who { margin: 0.2rem 0 0; color: var(--muted, #5b6678); font-size: 0.9rem; }
 	.pickers { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0.6rem 0 0.4rem; }
-	.pickers select { width: auto; min-width: 9rem; font-size: 1.05rem; padding: 0.7rem 0.9rem; border-radius: 16px; }
+	.pickers select { width: auto; min-width: 9rem; font-size: 1.05rem; padding: 0.7rem 2.4rem 0.7rem 0.9rem; border-radius: 16px; background-position: right 0.9rem center; }
 	.sub { margin: 0.2rem 0 0.8rem; color: var(--muted, #5b6678); font-size: 0.88rem; }
 	.center { text-align: center; padding: 2rem 0; }
 	.empty { text-align: center; padding: 2rem 1rem; line-height: 1.8; }
