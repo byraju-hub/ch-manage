@@ -349,7 +349,7 @@ function data_bootstrap(array $user): array
         if (!data_perm_ok($user, $spec['read'])) continue;
         $tables[$name] = isset($spec['custom']) ? data_read_site($user) : data_read_table($name, $spec, $user);
     }
-    return ['version' => data_version(), 'tables' => $tables, 'features' => integ_features()];
+    return ['version' => data_version(), 'tables' => $tables, 'features' => integ_features() + ['finance' => finance_features()]];
 }
 
 function data_read_table(string $name, array $spec, array $user): array

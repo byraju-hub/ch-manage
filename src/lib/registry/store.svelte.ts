@@ -103,7 +103,7 @@ class Registry {
 	d = $state<Data>(emptyData());
 	saveError = $state('');
 	loaded = $state(false); // 서버에서 데이터를 받았는가
-	features = $state({ sms: false, ai: false }); // 외부 서비스(문자 발송·AI 분석)가 설정되어 켜져 있는가
+	features = $state({ sms: false, ai: false, finance: { available: false, path: 'fm' } }); // 외부 서비스(문자 발송·AI 분석)가 설정되어 켜져 있는가
 	loading = $state(false);
 	loadError = $state('');
 	constructor() {
@@ -140,8 +140,8 @@ class Registry {
 	}
 	/** 다른 사람이 저장했거나 저장이 거절되었을 때: 서버의 값으로 다시 받는다 */
 	async reload() { this.applyBootstrap(await auth.api('GET', '/bootstrap')); }
-	private applyBootstrap(b: { version: number; tables: Record<string, Row[]>; features?: { sms: boolean; ai: boolean } }) {
-		this.features = { sms: !!b.features?.sms, ai: !!b.features?.ai };
+	private applyBootstrap(b: { version: number; tables: Record<string, Row[]>; features?: { sms: boolean; ai: boolean; finance?: { available: boolean; path: string } } }) {
+		this.features = { sms: !!b.features?.sms, ai: !!b.features?.ai, finance: { available: !!b.features?.finance?.available, path: b.features?.finance?.path || 'fm' } };
 		const d = emptyData();
 		for (const c of CODECS) { const rows = b.tables[c.name]; if (rows) c.load(d, rows, { visit: this.perms.visit }); }
 		sync.baseline(d, b.version);

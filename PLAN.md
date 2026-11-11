@@ -33,6 +33,7 @@
 - **10. 보안·운영 보강**: 비밀번호를 바꾸거나 임시 비밀번호를 만들면 그 사용자의 다른 로그인을 끊음(`users.session_epoch`, 마이그레이션 006), 인도자(D)의 비밀번호 바꾸기, 보안 헤더(`.htaccess`의 `ch-manage-headers` 블록과 API 응답), 새 버전을 올린 뒤 `/install/` 을 열지 않았을 때의 안내(`update_pending` 503, `finalize_needed`), 프로그램 매뉴얼 페이지(`/manual`)
 
 ## 릴리스
+- **11. 재정 관리(fin-manage) 연결**: 같은 DB 에 재정 관리가 있으면 상단에 '재정 열기' 버튼(1회용 입장권 `cm_sso_tickets`, 마이그레이션 007, 유효 30초·해시만 저장·분당 10회), 문서 › 기부금 영수증 화면 안내, 설정 › 외부 서비스에서 폴더 이름·표 접두어 지정, Windows 개발 환경의 쿠키 경로 수정. 교적은 재정의 표(`fm_`)를 읽거나 쓰지 않고 `fm_meta` 존재만 확인한다. (구조 번호 7 — 아직 릴리스 전)
 - **v0.1.0**: 첫 공개 버전. 위의 1~10단계가 모두 들어 있다. (개발 중에 만들었던 이전 시험 릴리스는 모두 지우고, 이 버전부터 새로 시작한다. 데이터베이스 구조 번호(`schema`)는 6이다.)
 - 새 버전을 낼 때: `server/api/lib/bootstrap.php` 의 `CM_VERSION`, `package.json`, `package-lock.json` 의 버전을 올리고 커밋·푸시한 뒤 `vX.Y.Z` 태그를 올리면 GitHub Actions 가 배포용 zip 을 만들어 Releases 에 붙인다. (README 의 '개발과 배포' 참고)
 

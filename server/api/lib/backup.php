@@ -12,7 +12,7 @@ declare(strict_types=1);
 // 서버에 보관하는 백업은 data/backups/ 에 둔다. (data 폴더는 웹에서 직접 열리지 않는다.)
 
 const BACKUP_FORMAT = 1;
-const BACKUP_SKIP_TABLES = ['login_attempts']; // 로그인 시도 제한 기록은 백업하지 않는다.
+const BACKUP_SKIP_TABLES = ['login_attempts', 'sso_tickets']; // 로그인 시도 제한 기록과 재정 입장권(30초짜리 임시 값)은 백업하지 않는다.
 const BACKUP_CHUNK = 60_000;                    // 되살릴 파일을 올릴 때 한 번에 보내는 크기(바이트). 호스팅의 128KB 한도 아래로.
 
 function backup_dir(): string
@@ -114,12 +114,16 @@ function backup_create(string $path, string $note = ''): string
 /** 서버에 보관한 백업 파일 이름 규칙. 이름에 종류가 들어간다: auto(자동), manual(직접), pre(되살리기 직전) */
 function backup_name(string $kind): string
 {
-    return 'cm-' . $kind . '-' . date('Ymd-His') . '.cmbak';
+    // 같은 초에 두 번 만들어도 앞의 파일을 덮어쓰지 않도록 번호를 붙인다. (되살리기 직전 보관본으로 곧바로 되돌릴 때 필요)
+    $base = 'cm-' . $kind . '-' . date('Ymd-His');
+    $name = $base . '.cmbak';
+    for ($i = 2; is_file(backup_dir() . '/' . $name) && $i < 100; $i++) $name = $base . '-' . $i . '.cmbak';
+    return $name;
 }
 
 function backup_valid_name(string $n): bool
 {
-    return (bool)preg_match('/^cm-(auto|manual|pre)-\d{8}-\d{6}\.cmbak$/', $n);
+    return (bool)preg_match('/^cm-(auto|manual|pre)-\d{8}-\d{6}(-\d{1,2})?\.cmbak$/', $n);
 }
 
 /** @return array<int, array{name:string,kind:string,size:int,at:string}> 최신순 */

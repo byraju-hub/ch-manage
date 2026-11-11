@@ -13,7 +13,7 @@ function session_boot(): void
 {
     if (session_status() === PHP_SESSION_ACTIVE) return;
     // 같은 도메인의 다른 프로그램과 쿠키가 섞이지 않도록 이 사이트 폴더(예: /cm)에만 쿠키를 보낸다.
-    $base = rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
+    $base = cm_script_base(2);
     $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
     // 세션 파일은 이 프로그램 전용 폴더에 둔다. (공용 폴더는 다른 프로그램이 정한 짧은 만료 시간에 지워질 수 있다.)
     $dir = CM_DATA . '/sessions';

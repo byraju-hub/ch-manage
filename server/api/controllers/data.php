@@ -68,7 +68,7 @@ function serve_favicon(): never
         readfile($f);
         exit;
     }
-    $base = rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
+    $base = cm_script_base(2);
     // 휴대폰 홈 화면용(?size=180)은 큰 기본 그림으로 보낸다.
     $file = (($_GET['size'] ?? '') === '180') ? '/apple-touch-icon.png' : '/favicon-32.png';
     header('Cache-Control: public, max-age=3600');

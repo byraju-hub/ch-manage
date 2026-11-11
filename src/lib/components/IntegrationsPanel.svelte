@@ -16,6 +16,20 @@
 	let busy = $state('');
 	let smsKey = $state(''), smsSecret = $state(''), smsSender = $state('');
 	let aiKey = $state(''), aiModel = $state('');
+	let finPath = $state('fm'), finPrefix = $state('fm_'), finInstalled = $state(false);
+
+	async function loadFin() {
+		try { const c = await auth.api<{ path: string; prefix: string; installed: boolean }>('GET', '/finance/config'); finPath = c.path; finPrefix = c.prefix; finInstalled = c.installed; } catch { /* 위쪽 오류 표시로 충분 */ }
+	}
+	async function saveFin() {
+		err = msg = ''; busy = 'fin';
+		try {
+			const c = await auth.api<{ path: string; prefix: string; installed: boolean }>('PUT', '/finance/config', { path: finPath, prefix: finPrefix });
+			finPath = c.path; finPrefix = c.prefix; finInstalled = c.installed;
+			msg = c.installed ? '재정 관리 연결 정보를 저장했습니다. 재정 관리가 설치되어 있어 상단에 [재정 열기]가 나타납니다.' : '저장했습니다. 이 데이터베이스에서 재정 관리(표 이름이 위 접두어로 시작)를 찾지 못해 [재정 열기]는 아직 나타나지 않습니다.';
+			await refreshFeatures();
+		} catch (e) { err = e instanceof Error ? e.message : '저장하지 못했습니다.'; } finally { busy = ''; }
+	}
 
 	async function load() {
 		try {
@@ -23,7 +37,7 @@
 			smsSender = info.sms.sender; aiModel = info.ai.model;
 		} catch (e) { err = e instanceof Error ? e.message : '불러오지 못했습니다.'; }
 	}
-	onMount(load);
+	onMount(() => { load(); loadFin(); });
 	const refreshFeatures = async () => { try { await registry.reload(); } catch { /* 다음 접속 때 반영됨 */ } };
 
 	async function saveSms() {
@@ -87,4 +101,14 @@
 			</div>
 		</section>
 	</div>
+
+	<section class="card" style="margin-top:1rem">
+		<h2>재정 관리 연결 <small class="hint">(fin-manage)</small> {#if finInstalled}<span class="tag">설치됨</span>{/if}</h2>
+		<p class="muted" style="font-size:.82rem;margin:0 0 .6rem">같은 데이터베이스에 재정 관리가 설치되어 있으면 상단에 <b>재정 열기</b> 버튼이 나타나 비밀번호를 다시 넣지 않고 넘어갈 수 있어요. 폴더 이름과 표 접두어를 바꿔 설치했다면 여기에서 맞춰 주세요. 재정 사용 여부(승인)는 재정 관리에서 따로 정해요.</p>
+		<div class="form">
+			<label>재정 관리 폴더 이름 <small class="hint">(이 사이트와 같은 위치의 폴더, 기본 fm)</small><input bind:value={finPath} placeholder="fm" autocomplete="off" /></label>
+			<label>재정 관리 표 접두어 <small class="hint">(기본 fm_)</small><input bind:value={finPrefix} placeholder="fm_" autocomplete="off" /></label>
+		</div>
+		<div class="row" style="justify-content:flex-end;margin-top:.7rem"><button type="button" onclick={saveFin} disabled={busy !== ''}>{busy === 'fin' ? '저장하는 중…' : '저장'}</button></div>
+	</section>
 {/if}

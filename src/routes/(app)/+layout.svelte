@@ -9,6 +9,7 @@
 	import { sync } from '#lib/registry/sync.svelte.ts';
 	import type { AppUser } from '#lib/registry/types.ts';
 	import { formatMobile } from '#lib/registry/derive.ts';
+	import { openFinance } from '#lib/registry/finance.ts';
 	import LeaderAttendance from '#lib/components/LeaderAttendance.svelte';
 
 	let { children } = $props();
@@ -24,6 +25,9 @@
 	let pwOpen = $state(false);
 	let busy = $state(false);
 	let loginMsg = $state('');
+	let finMsg = $state('');
+	const showFinance = $derived(registry.features.finance.available && !auth.user?.is_demo);
+	async function goFinance() { finMsg = (await openFinance()) ?? ''; }
 	let last = Date.now();
 	let menuOpen = $state(false);
 	let userOpen = $state(false);
@@ -222,6 +226,12 @@
 					{#if showAdmin}{@render dd('관리자', adminMenu, path === '/settings' || path === '/admin')}{/if}
 
 					<div class="nav-tools">
+						{#if showFinance}
+							<button type="button" class="tool-btn fin-btn" onclick={goFinance}>
+								<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M7 15h3" /></svg>
+								재정 열기
+							</button>
+						{/if}
 						<div class="perm">
 							<button type="button" class="tool-btn" aria-expanded={userOpen} onclick={() => (userOpen = !userOpen)}>
 								<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a6 6 0 0112 0v1" /></svg>
@@ -259,6 +269,7 @@
 	</header>
 
 	<main>
+		{#if finMsg}<p class="sys-warn" role="alert">{finMsg}</p>{/if}
 		{#if unlocked && sysWarn}<p class="sys-warn" role="alert"><b>마무리가 덜 된 것이 있어요.</b> 새 버전 파일을 올린 뒤 아직 설치 화면을 열지 않아서, 보안 설정(https 이동·보안 헤더)이 적용되지 않았어요. <a href={hrefTo('/install/')} data-sveltekit-reload>여기를 눌러</a> 한 번 열어 주세요. (열기만 하면 자동으로 마무리돼요)</p>{/if}
 		{#if unlocked && auth.user?.is_demo}<p class="demo-bar" role="status">체험 계정으로 보고 있어요. 모든 화면을 볼 수 있지만, 저장하거나 바꿀 수는 없어요. (바꾼 것은 화면에서만 바뀌고 새로고침하면 돌아와요)</p>{/if}
 		{#if !auth.ready}
@@ -373,6 +384,7 @@
 </div>
 
 <style>
+	.fin-btn { color: #0f6b40; font-weight: 700; }
 	.demo-hint { background: var(--accent-soft, #e6eafa); border-radius: 10px; padding: 8px 12px; font-size: 0.85rem; text-align: center; margin: 0.8rem 0 0; }
 	.sys-warn { background: #fff2eb; border: 1px solid #fde0d0; color: #7a3410; border-radius: 10px; padding: 10px 14px; font-size: 0.9rem; margin: 0 0 0.8rem; line-height: 1.6; }
 	.sys-warn a { font-weight: 700; text-decoration: underline; }

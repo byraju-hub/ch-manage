@@ -8,7 +8,7 @@ require __DIR__ . '/lib/bootstrap.php';
 
 // 이 파일이 놓인 폴더(예: /cm/api)를 뺀 나머지가 API 경로다.
 $uri = (string)parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-$base = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/');
+$base = cm_script_base(1);
 $path = substr($uri, strlen($base));
 if (!str_starts_with($path, '/v1/')) {
     json_fail('not_found', '찾을 수 없는 주소입니다.', 404);
@@ -21,7 +21,7 @@ if (!cm_config()) {
 }
 
 require __DIR__ . '/lib/migrate.php';
-foreach (['auth', 'users', 'data', 'dm', 'leader', 'backup', 'services'] as $c) {
+foreach (['auth', 'users', 'data', 'dm', 'leader', 'backup', 'services', 'finance'] as $c) {
     require __DIR__ . '/controllers/' . $c . '.php';
 }
 
@@ -41,7 +41,7 @@ route('GET', '/system/status', function () use ($schemaNow, $schemaLatest) {
 
 // 새 버전 파일을 올렸는데 /install/ 을 아직 열지 않아 데이터베이스가 옛 구조이면, 오류가 나기 전에 안내한다.
 if ($schemaNow < $schemaLatest && !in_array($path, ['/system/status', '/auth/me', '/auth/logout'], true)) {
-    $base = rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
+    $base = cm_script_base(2);
     json_fail('update_pending', '새 버전 파일이 올라왔지만 아직 마무리하지 않았습니다. 관리자가 주소창에 ' . $base . '/install/ 을 한 번 열어야 쓸 수 있어요.', 503);
 }
 

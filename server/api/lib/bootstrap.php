@@ -21,6 +21,7 @@ require __DIR__ . '/auth.php';
 require __DIR__ . '/data.php';
 require __DIR__ . '/backup.php';
 require __DIR__ . '/services.php';
+require __DIR__ . '/finance.php';
 require __DIR__ . '/dm.php';
 require __DIR__ . '/dmextra.php';
 

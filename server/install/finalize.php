@@ -41,7 +41,10 @@ const CM_HEADER_RULES = "# ch-manage-headers: 보안 헤더
 /** 이 설치 화면이 있는 폴더의 주소. 사이트 맨 위에 설치했다면 빈 문자열. 예: /cm */
 function cm_base_path(): string
 {
-    return rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/install/index.php')), '/');
+    // Windows 의 PHP 는 맨 위 폴더의 dirname 이 백슬래시가 되므로 슬래시로 통일한다.
+    $p = (string)($_SERVER['SCRIPT_NAME'] ?? '/install/index.php');
+    for ($i = 0; $i < 2; $i++) $p = rtrim(str_replace(chr(92), '/', dirname($p)), '/');
+    return $p === '.' ? '' : $p;
 }
 
 /** 아직 바꾸지 않은 파일이 있는가 (zip 을 새로 풀었거나 처음 설치한 직후) */

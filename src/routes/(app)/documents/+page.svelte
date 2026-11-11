@@ -9,6 +9,7 @@
 	import { certNo } from '#lib/registry/site-settings.ts';
 	import { auth } from '#lib/registry/auth.svelte.ts';
 	import { onMount, tick } from 'svelte';
+	import { openFinance } from '#lib/registry/finance.ts';
 
 	// 문서 출력: 화면에서 미리 보고 → 인쇄 또는 PDF 내려받기. 출력할 때마다 접속기록(출력)과 발급번호를 남김
 	// 증명서 번호는 서버가 정하고 발급 대장(발급번호·종류·교인·용도·발급자)에 남깁니다. 직인 그림은 내려받기 권한이 있는 사람에게만 서버가 내려줍니다.
@@ -54,6 +55,7 @@
 	// [실제 시스템] 헌금번호 ↔ 교적 ID 가 이어지면 기부 연도만 고르면 금액이 자동으로 채워지게 함
 	type DonRow = { from: string; to: string; kind: string; amount: string };
 	const donYears = Array.from({ length: 5 }, (_, i) => now.getFullYear() - i);
+	let finErr = $state('');
 	let donYear = $state(now.getFullYear() - 1); // 연말정산용은 지난해 기부금
 	let donRows = $state<DonRow[]>([{ from: `${now.getFullYear() - 1}-01-01`, to: `${now.getFullYear() - 1}-12-31`, kind: '헌금', amount: '' }]);
 	function setDonYear(y: number) {
@@ -224,6 +226,9 @@
 		{#if doc === '교인 요람' && consentOnly}<p class="muted" style="margin:0;font-size:.82rem">요람에는 '요람 공개'에 동의한 사람만 나옵니다. (일괄 동의를 받기 전이라 지금은 몇 명만 있습니다. 시험할 때는 체크를 풀어 보세요)</p>{/if}
 		{#if doc === '세례증명서' && p && !baptism}<p class="warn" style="margin:.4rem 0 0">이 교인은 세례(유아세례·입교) 기록이 없어 세례증명서를 만들 수 없습니다.</p>{/if}
 		{#if doc === '기부금 영수증'}
+			{#if registry.features.finance.available && !auth.user?.is_demo}
+				<p class="fin-note" role="note">재정 관리가 설치되어 있어요. 기부금 영수증은 <b>재정 › 기부금 영수증</b>에서 헌금 기록으로 한꺼번에 발급할 수 있어요. <button type="button" class="ghost sm" onclick={async () => { finErr = (await openFinance()) ?? ''; }}>재정 열기</button>{#if finErr} <span class="warn">{finErr}</span>{/if}</p>
+			{/if}
 			<div class="don">
 				<div class="row" style="gap:.6rem">
 					<label class="row" style="gap:.4rem"><span class="muted">기부 연도</span>
@@ -485,6 +490,7 @@
 	.rcpt .cert-date { margin-bottom: 6mm; }
 	.rcpt .cert-sign { line-height: 1.8; }
 	.rcpt .foot-note { margin-top: 4mm; }
+	.fin-note { margin: 0.8rem 0 0; padding: 0.7rem 0.9rem; border-radius: 12px; background: #eaf6f0; border: 1px solid #bfe3d0; color: #1b5a3c; font-size: 0.9rem; }
 	.don { margin-top: 0.8rem; padding: 0.8rem 0.9rem; border-radius: 12px; background: var(--primary-50); }
 	.don-t input { padding: 0.3rem 0.5rem; font-size: 0.88rem; }
 	.don-t .dates { display: flex; align-items: center; gap: 0.4rem; white-space: nowrap; }

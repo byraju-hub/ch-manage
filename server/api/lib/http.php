@@ -3,6 +3,17 @@ declare(strict_types=1);
 
 // 요청과 응답 도우미.
 
+/**
+ * 이 요청 파일(SCRIPT_NAME)에서 폴더를 $up 번 올라간 주소. 사이트 맨 위에 설치했다면 빈 문자열. 예: /cm
+ * Windows 의 PHP 는 맨 위 폴더의 dirname 이 백슬래시가 되어 쿠키 경로가 깨지므로 슬래시로 통일한다.
+ */
+function cm_script_base(int $up = 2): string
+{
+    $p = (string)($_SERVER['SCRIPT_NAME'] ?? '/');
+    for ($i = 0; $i < $up; $i++) $p = rtrim(str_replace(chr(92), '/', dirname($p)), '/');
+    return $p === '.' ? '' : $p;
+}
+
 /** 모든 API 응답에 붙이는 보안 헤더. (사이트 폴더의 .htaccess 에도 같은 것이 있지만, 그 모듈이 없는 호스팅을 위해 여기서도 보낸다.) */
 function cm_security_headers(): void
 {
