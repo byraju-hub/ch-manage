@@ -227,9 +227,9 @@
 
 					<div class="nav-tools">
 						{#if showFinance}
-							<button type="button" class="tool-btn fin-btn" onclick={goFinance}>
-								<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M7 15h3" /></svg>
-								재정 열기
+							<button type="button" class="tool-btn fin-btn" onclick={goFinance} title="재정 관리 열기 (새로 로그인하지 않아도 돼요)" aria-label="재정 관리 열기">
+								재정
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg>
 							</button>
 						{/if}
 						<div class="perm">
@@ -258,9 +258,8 @@
 								</div>
 							{/if}
 						</div>
-						<button type="button" class="tool-btn" onclick={logout} title="로그아웃">
+						<button type="button" class="tool-btn" onclick={logout} title="로그아웃" aria-label="로그아웃">
 							<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4" /><path d="M10 17l5-5-5-5M15 12H3" /></svg>
-							<span class="lbl">로그아웃</span>
 						</button>
 					</div>
 				</nav>

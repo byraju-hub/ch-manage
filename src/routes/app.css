@@ -513,7 +513,7 @@ table.info tbody tr:hover { background: none; }
 /* 데스크톱이지만 폭이 좁을 때(재정 열기 버튼이 더해져 메뉴가 두 줄로 꺾이지 않게): 등급 표시·로그아웃 글자를 줄이고 간격을 좁힌다 */
 @media (min-width: 961px) and (max-width: 1320px) {
 	.main-nav > a, .main-nav .dd-btn { padding: 0 0.5rem; }
-	.nav-tools .tool-btn .role, .nav-tools .tool-btn .lbl { display: none; }
+	.nav-tools .tool-btn .role { display: none; }
 	.nav-tools .tool-btn { padding: 0.42rem 0.7rem; }
 	.site-header .bar { gap: 0.8rem; }
 }
