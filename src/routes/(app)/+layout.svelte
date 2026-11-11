@@ -258,9 +258,9 @@
 								</div>
 							{/if}
 						</div>
-						<button type="button" class="tool-btn" onclick={logout}>
+						<button type="button" class="tool-btn" onclick={logout} title="로그아웃">
 							<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4" /><path d="M10 17l5-5-5-5M15 12H3" /></svg>
-							로그아웃
+							<span class="lbl">로그아웃</span>
 						</button>
 					</div>
 				</nav>
