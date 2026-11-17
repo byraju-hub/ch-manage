@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { todayIso } from '#lib/registry/calendar.ts';
 	import { hrefTo } from '#lib/registry/paths.ts';
 	// 심방: 심방 목록 · 캘린더 보기 · 소그룹 특이사항 · 등록 (심방 권한이 있는 회원만)
 	import { page } from '$app/state';
@@ -12,7 +13,7 @@
 	import { officeKindTitle } from '#lib/registry/derive.ts';
 	import { FULL_TIME_CLERGY, type VisitMethod } from '#lib/registry/types.ts';
 
-	const today = new Date().toISOString().slice(0, 10);
+	const today = todayIso();
 	let tab = $state<'list' | 'cal' | 'notes' | 'new'>('cal');
 	let q = $state(page.url.searchParams.get('q') ?? '');
 	let kind = $state('');

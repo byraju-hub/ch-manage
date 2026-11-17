@@ -3,6 +3,10 @@
 
 export const pad2 = (n: number) => String(n).padStart(2, '0');
 export const isoDate = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+/** 오늘 날짜(한국 시각 기준, 'YYYY-MM-DD'). toISOString() 은 국제 표준시라 오전 9시 전에는 어제로 나오므로 쓰지 않는다. */
+export const todayIso = () => isoDate(new Date());
+/** 지금 시각 'YYYY-MM-DD HH:MM' (한국 시각 기준) */
+export const nowStamp = () => { const d = new Date(); return `${isoDate(d)} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
 const at = (y: number, m: number, d: number) => new Date(y, m - 1, d);
 export function addDays(iso: string, n: number): string {
 	const [y, m, d] = iso.split('-').map(Number);
@@ -56,7 +60,7 @@ export function churchSeasons(y: number): Seasonal[] {
 
 // ---- 한국 공휴일 (캘린더에 빨간색으로 기본 표시) ----
 // 양력 공휴일은 계산하고, 설날·추석·부처님오신날(음력)은 해마다 날짜표로 넣습니다.
-// [실제 시스템] 한국천문연구원 특일 정보 API(공공데이터포털)로 해마다 받아 오면 임시공휴일·선거일까지 정확합니다.
+// 임시공휴일·선거일은 자동으로 받아 오지 않으므로 해마다 확인해야 합니다. (한국천문연구원 특일 정보로 자동화하는 것은 앞으로 할 일: PLAN.md)
 const LUNAR: Record<number, { seol: string; chuseok: string; buddha: string }> = {
 	2025: { seol: '01-29', chuseok: '10-06', buddha: '05-05' },
 	2026: { seol: '02-17', chuseok: '09-25', buddha: '05-24' },

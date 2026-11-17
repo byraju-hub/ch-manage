@@ -11,7 +11,7 @@ import { dm } from './dm.svelte.ts';
 import { CODECS, type Row } from './tables.ts';
 import { hrefTo } from './paths.ts';
 import { categoryPath, currentFaith, currentOffice, currentStatus, officeTitle, registeredOn } from './derive.ts';
-import { isoDate, koreanHolidays, type CalItem } from './calendar.ts';
+import { isoDate, koreanHolidays, nowStamp, todayIso, type CalItem } from './calendar.ts';
 import { extractCareEvents, type CareEvent } from './care-events.ts';
 import { MAX_CATEGORY_DEPTH, parseRank } from './types.ts';
 import { defaultSettings, eduDeptFor, inRange, type YearSettings } from './year-settings.ts';
@@ -91,8 +91,8 @@ const emptyData = (): Data => ({
 	visits: [], affiliations: [], events: [], educationCourses: [], educationRecords: [], orgUnits: [], meetings: [],
 	attendance: {}, certRequests: [], communityList: []
 });
-const now = () => new Date().toISOString().slice(0, 16).replace('T', ' ');
-const today = () => isoDate(new Date());
+const now = nowStamp;
+const today = todayIso;
 const uid = () => crypto.randomUUID();
 
 const NO_PERMS: T.Perms = { edit: false, export: false, visit: false, admin: false };
@@ -333,9 +333,7 @@ class Registry {
 	}
 
 	// ---- 홈페이지 증명서 신청 ----
-	// [실제 시스템] 홈페이지(교인 로그인)에서 신청하면 cert_requests 표에 '대기'로 들어오고,
-	//   관리자가 승인한 신청만 직인이 들어간 PDF를 만들어 홈페이지에서 내려받게 합니다. 직인 이미지는 공개 저장소가 아닌
-	//   로그인한 관리자만 읽을 수 있는 저장소(예: Supabase Storage 비공개 버킷)에 둡니다.
+	// 홈페이지에서 신청하면 certificate_requests 표에 '대기'로 들어오고, 관리자가 승인한 신청만 직인이 들어간 증명서를 낼 수 있습니다.
 	get certRequests(): T.CertRequest[] { return this.d.certRequests ?? []; }
 	get canApproveCert(): boolean { return this.isSuper || this.perms.admin; }
 	decideCertRequest(id: string, approve: boolean) {
@@ -429,9 +427,8 @@ class Registry {
 	// 출석은 두 가지가 따로 있습니다.
 	//  1) 주일 오전예배 출석: 교적 프로그램 '출석' 화면에서 등록 (attended)
 	//  2) 주일 오후 소그룹 모임 출석: 홈페이지 출석부에서 소그룹 인도자가 등록 (groupAttended)
-	// [실제 시스템] groupAttended 는 홈페이지 출석부 조회로 바꾸세요.
 	// 소그룹 모임 출석: 저장된 기록(홈페이지 출석부에서 가져온 것)만 쓴다. 기록이 없으면 출석으로 세지 않는다.
-	groupAttended(personId: string, sundayIso: string, _weeksFromEnd: number): boolean {
+	groupAttended(personId: string, sundayIso: string): boolean {
 		return this.d.groupAttendance?.[sundayIso]?.[personId]?.present ?? false;
 	}
 	// 그 주일에 이 소그룹의 출석을 한 명이라도 기록했는가. 기록이 없는 주일은 '모두 결석'이 아니라 '기록 없음'이라서 출석률 계산에서 뺀다.
@@ -448,7 +445,7 @@ class Registry {
 	}
 	// 주일 오전예배: 입력한 기록만 쓴다. 기록이 없으면 출석으로 세지 않는다.
 	// 부서 관리와 연결된 학생은 부서 관리의 출석 기록을 우선한다.
-	attended(personId: string, sundayIso: string, _weeksFromEnd: number): boolean {
+	attended(personId: string, sundayIso: string): boolean {
 		return dm.att[sundayIso]?.[personId] ?? this.d.attendance[sundayIso]?.[personId]?.present ?? false;
 	}
 	// 그 주일에 출석 기록이 하나라도 있는가. 없으면 '기록 없음'이지 모두 결석한 것이 아니다 (장기 결석 알림 등에서 구분)
@@ -514,9 +511,7 @@ class Registry {
 	}
 
 	// ---- 캘린더 (달 단위) ----
-	// [실제 시스템] 음력 생일은 해마다 양력 날짜가 바뀝니다. 지금은 같은 월·일에 '음력' 표시만 합니다.
-	//   한국천문연구원 음양력 정보 API(공공데이터포털) 또는 음력 변환 라이브러리로 그해의 양력 날짜를 구해 표시하세요.
-	//   (생일 명단·대시보드·문서 출력의 생일도 같은 변환을 써야 합니다)
+	// 음력 생일은 해마다 양력 날짜가 바뀌지만, 지금은 같은 월·일에 '음력' 표시만 합니다. (양력 변환은 앞으로 할 일: PLAN.md)
 	calendarItems(year: number, month: number, kinds: Set<string>): CalItem[] {
 		const out: CalItem[] = [];
 		const mm = String(month).padStart(2, '0');
@@ -595,7 +590,7 @@ class Registry {
 	}
 	// 재적 이력이 기준: 이력을 남기면 교인구분 1단계를 자동으로 맞춤
 	//  별세 → 별세, 전출 → 이사/이민, 제적·보관 → 보관, 보류 → 3단계 '불출석', 등록·전입·복적 → 교인(장년·예배출석)
-	// [실제 시스템] DB 트리거로 같은 규칙을 적용합니다. (카테고리 id 'dead'·'move'·'keep'·'m.a.a' 는 지우지 못하게 고정)
+	// 서버에서는 교인구분 중 'm'·'o'·'dead'·'move'·'keep'·'m.a.a' 를 지우지 못하게 막아 둡니다.
 	private syncCategory(person_id: string, kind: T.StatusKind) {
 		const p = this.person(person_id);
 		if (!p) return;
@@ -647,8 +642,8 @@ class Registry {
 	// ---- 일괄 수정: 교인 목록에서 고른 여러 사람을 한 번에 ----
 	// 사람마다 변경 이력은 그대로 남기고, 저장과 접속기록은 한 번만. 바뀐 사람 수를 돌려줌
 	bulkEdit(ids: string[], op: BulkOp): number {
-		if (!this.isSuper) return 0; // 일괄 수정은 최고관리자만 ([실제 시스템] 서버에서도 같은 확인)
-		const today = new Date().toISOString().slice(0, 10);
+		if (!this.isSuper) return 0; // 일괄 수정은 최고관리자만 (서버에서도 같은 확인)
+		const today = todayIso();
 		let n = 0;
 		for (const id of ids) {
 			const p = this.person(id);
@@ -758,7 +753,7 @@ class Registry {
 		return found;
 	}
 	// 캘린더 일정 (교회 절기 · 사역 일정 · 성례 일정)
-	// [실제 시스템] events 표에 저장. 수정 권한이 있는 회원만 등록·수정·삭제
+	// events 표에 저장. 수정 권한이 있는 회원만 등록·수정·삭제
 	addEvent(e: Omit<T.ChurchEvent, 'id'>) {
 		this.d.events.push({ ...e, id: uid() });
 		this.log('일정 등록', `${e.date} ${e.title}`);

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { todayIso } from '#lib/registry/calendar.ts';
 	// 일괄 수정 (최고관리자만): 목록에서 체크한 교인의 교인구분 · 신급 · 직분 · 공동체·소그룹을 한꺼번에 바꿈.
 	// 교인 목록과 '교인 목록 항목 설정' 화면이 함께 씀. 바꾼 내용은 각 교인의 변경 이력에 남음
 	import { registry } from '#lib/registry/store.svelte.ts';
@@ -15,7 +16,7 @@
 	let bOffice = $state<OfficeName>('서리집사');
 	let bRank = $state('서리');
 	$effect(() => { bRank = rankChoices(bOffice)[0]; });
-	let bDate = $state(new Date().toISOString().slice(0, 10));
+	let bDate = $state(todayIso());
 	let bEndOld = $state(true);
 	let bComm = $state('');
 	let bGroup = $state('');

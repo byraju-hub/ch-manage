@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { todayIso } from '#lib/registry/calendar.ts';
 	import { hrefTo } from '#lib/registry/paths.ts';
 	// 교회 조직표: 당회 · 시무집사회 · 시무권사회 · 남/여전도회 · 교회 조직표
 	import { registry } from '#lib/registry/store.svelte.ts';
@@ -78,7 +79,7 @@
 
 	// ---- 인쇄 · 엑셀 · PDF: 지금 탭의 명단 (전도회는 그 탭의 전도회 전체) ----
 	type Sec = { title: string; heads: string[]; rows: (string | number)[][] };
-	const today = new Date().toISOString().slice(0, 10);
+	const today = todayIso();
 	const sections = $derived.by((): Sec[] => {
 		if (tab === '남전도회' || tab === '여전도회') {
 			return (tab === '남전도회' ? males : females).map((n) => ({
@@ -284,9 +285,7 @@
 	.rt th { background: #f1f3f5; font-weight: 700; }
 	.sh-foot { margin-top: 6mm; font-size: 8.5pt; color: #666; text-align: center; }
 	@media print {
-		:global(.site-header), :global(.site-footer), :global(.tabbar), :global(.to-top), :global(.warn), .no-print { display: none !important; }
-		:global(.site > main) { padding: 0 !important; max-width: none !important; }
-		:global(body) { background: #fff !important; }
+		:global(.warn), .no-print { display: none !important; }
 		.print-wrap { position: static; width: auto; height: auto; overflow: visible; }
 		.sheet { width: auto; }
 	}

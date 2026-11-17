@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { nowStamp } from '#lib/registry/calendar.ts';
 	import { auth } from '#lib/registry/auth.svelte.ts';
 	import { uploadChunks } from '#lib/registry/upload.ts';
 	// 심방 녹음·문서를 올리면 분석해서 심방 기록 칸을 채워 줍니다. (서버: /api/v1/visit-analyze, AI)
@@ -30,7 +31,7 @@
 				clearInterval(timer);
 				const type = mr.mimeType || 'audio/webm';
 				const ext = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm';
-				file = new File(chunks, `심방녹음-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '')}.${ext}`, { type });
+				file = new File(chunks, `심방녹음-${nowStamp().replace(/[- :]/g, '')}.${ext}`, { type });
 				rec = null;
 				run();
 			};

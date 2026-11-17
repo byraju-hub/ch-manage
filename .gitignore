@@ -47,3 +47,8 @@ vite.config.ts.timestamp-*
 
 # 디자인 스킬 작업 파일
 /.taste-skill
+
+# 시험 사이트(내 컴퓨터에서만)
+/tests/env/www/
+/tests/env/mdata/
+/tests/env/*.log

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { todayIso } from '#lib/registry/calendar.ts';
 	import { hrefTo } from '#lib/registry/paths.ts';
 	import { dm } from '#lib/registry/dm.svelte.ts';
 	import { recentSundays } from '#lib/registry/weeks.ts';
@@ -19,7 +20,7 @@
 	const s = $derived(p ? registry.summary(p) : null);
 	const hh = $derived(p ? registry.householdOf(p.id) : undefined);
 	const can = $derived(registry.perms.edit);
-	const today = new Date().toISOString().slice(0, 10);
+	const today = todayIso();
 
 	// '심방' 탭은 A 등급만 보임
 	// 부서 관리(dep-manage)와 연결된 교인이면 부서·학년과 최근 출석을 보여 준다

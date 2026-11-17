@@ -124,4 +124,3 @@ export const CODECS: Codec[] = [
 	{ ...arr('accessLog', 'accessLog', 4), append: true }
 ];
 
-export const CODEC = new Map(CODECS.map((c) => [c.name, c]));

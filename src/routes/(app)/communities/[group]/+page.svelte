@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { todayIso } from '#lib/registry/calendar.ts';
 	import { hrefTo } from '#lib/registry/paths.ts';
 	// 소그룹 상세: 출석 추이, 인도자 특이사항(심방 권한자만), 구성원 명단(이름 · 직분 · 생년월일 · 나이 · 휴대폰)과 8주 출석
 	import { page } from '$app/state';
@@ -11,9 +12,9 @@
 	const YEAR = new Date().getFullYear();
 	const YEAR_WEEKS = recentSundays(60).filter((d) => d.startsWith(`${YEAR}-`));
 	const rateOf = (id: string, registered: string | null) => {
-		const ws = recordedWeeks.map((d, i) => ({ d, back: recordedWeeks.length - 1 - i })).filter((w) => !registered || w.d >= registered);
+		const ws = recordedWeeks.map((d) => ({ d })).filter((w) => !registered || w.d >= registered);
 		if (!ws.length) return 0;
-		return Math.round((ws.filter((w) => registry.groupAttended(id, w.d, w.back)).length * 100) / ws.length);
+		return Math.round((ws.filter((w) => registry.groupAttended(id, w.d)).length * 100) / ws.length);
 	};
 	const g = $derived(registry.groupDef(decodeURIComponent(page.params.group!)));
 	// 정렬: 인도자는 늘 맨 위, 그 아래는 고른 순서 (기본: 출석률 높은 순 / 가나다 순 / 나이 많은 순)
@@ -35,7 +36,7 @@
 			: byName;
 		return list.sort((a, b) => Number(b.p.id === g.leader_id) - Number(a.p.id === g.leader_id) || cmp(a, b));
 	});
-	const weekly = $derived(WEEKS.map((d, i) => ({ d, n: members.filter(({ p }) => registry.groupAttended(p.id, d, WEEKS.length - 1 - i)).length })));
+	const weekly = $derived(WEEKS.map((d) => ({ d, n: members.filter(({ p }) => registry.groupAttended(p.id, d)).length })));
 	const maxN = $derived(Math.max(1, ...weekly.map((w) => w.n)));
 	// 인도자가 출석 체크 화면에서 교인별로 적은 특이사항 (최근 8주, 최신 주일부터)
 	const reasons = $derived(
@@ -91,7 +92,7 @@
 				</div>
 			{/each}
 			{#if registry.perms.edit}
-				<form class="row" style="margin-top:.8rem;flex-wrap:nowrap" onsubmit={(e) => { e.preventDefault(); if (noteFor && noteBody.trim()) { registry.addGroupNote({ person_id: noteFor, small_group: g!.name, date: new Date().toISOString().slice(0, 10), body: noteBody.trim(), author: nameOf(g!.leader_id) || '인도자' }); noteBody = ''; } }}>
+				<form class="row" style="margin-top:.8rem;flex-wrap:nowrap" onsubmit={(e) => { e.preventDefault(); if (noteFor && noteBody.trim()) { registry.addGroupNote({ person_id: noteFor, small_group: g!.name, date: todayIso(), body: noteBody.trim(), author: nameOf(g!.leader_id) || '인도자' }); noteBody = ''; } }}>
 					<select bind:value={noteFor} style="width:9rem"><option value="">교인 선택</option>{#each members as { p }}<option value={p.id}>{p.name}</option>{/each}</select>
 					<input bind:value={noteBody} placeholder="특이사항 입력" /><button type="submit">추가</button>
 				</form>
@@ -119,8 +120,8 @@
 						<td style="text-align:center">{ageOf(p.birth_date) ?? '-'}</td>
 						<td class="nw">{p.phone ?? '-'}</td>
 						<td style="text-align:center"><b>{recordedWeeks.length ? `${rate}%` : '-'}</b></td>
-						{#each WEEKS as d, i}
-							{@const ok = registry.groupAttended(p.id, d, WEEKS.length - 1 - i)}
+						{#each WEEKS as d}
+							{@const ok = registry.groupAttended(p.id, d)}
 							<td style="text-align:center" title={registry.perms.visit ? (registry.d.groupAttendance?.[d]?.[p.id]?.reason ?? undefined) : undefined}><span class="pdot" class:on={ok}></span></td>
 						{/each}
 					</tr>

@@ -28,11 +28,6 @@ function in_enum(array $b, string $key, array $allowed, string $label = ''): str
     return $v;
 }
 
-function today_str(): string
-{
-    return date('Y-m-d');
-}
-
 /** 길이 n 의 읽기 쉬운 임시 비밀번호 (헷갈리는 글자 제외) */
 function temp_password(int $n = 10): string
 {

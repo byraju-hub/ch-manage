@@ -57,7 +57,13 @@ ul { padding-left: 1.2rem; }
 /* 상단바는 화면에 고정(fixed)하고, 맨 위 높이(93px · 휴대폰 73px)만큼 자리를 미리 비워 둠.
    (sticky 로 두면 상단바가 줄어들 때 아래 내용이 함께 당겨져 스크롤 위치가 바뀌고, 그 값으로 다시 크기가 바뀌어 화면이 떨림) */
 .site { min-height: 100vh; display: flex; flex-direction: column; padding-top: 93px; overflow-anchor: none; }
-@media print { .site { padding-top: 0; } }
+/* 인쇄: 메뉴·아래 줄·맨 위로 버튼은 빼고 본문만 종이에 꽉 차게 (인쇄하는 화면 공통) */
+@media print {
+	.site { padding-top: 0; }
+	.site-header, .site-footer, .tabbar, .to-top { display: none !important; }
+	.site > main { padding: 0 !important; max-width: none !important; }
+	body { background: #fff !important; }
+}
 .site > main { flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
 /* 상단바: 스크롤한 정도(--hb-p: 0 맨 위 → 1 다 줄어듦)를 따라 크기가 연속으로 줄어듦.
    맨 위 92px · 로고 50px → 다 줄면 지금 크기 68px · 로고 38px (최소). 짧은 전환으로 마우스 휠 단계도 부드럽게 */
@@ -460,9 +466,6 @@ tr.pick:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px;
 .mugshot2 { width: 64px; height: 86px; border-radius: 12px; object-fit: cover; border: 1px solid var(--line-strong); }
 .chips { display: flex; gap: 0.35rem; flex-wrap: wrap; }
 .tool-btn .role { font-size: 0.72rem; color: var(--primary-600); font-weight: 700; }
-.user-sw { display: flex; width: 100%; justify-content: space-between; margin: 0.2rem 0; }
-.user-sw small { color: var(--muted); font-weight: 500; }
-.user-sw.on { background: var(--primary-100); border-color: var(--primary); }
 
 /* 휴대폰: 교인 상세가 화면 위로 덮어 뜸 */
 .pane-back, .pane-close { display: none; }

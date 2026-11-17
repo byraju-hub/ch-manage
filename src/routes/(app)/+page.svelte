@@ -34,10 +34,10 @@
 	// 교육부서 출석: 교육부서에 속한 교인 중 그 주일 출석 (홈페이지 교육부서 보고서와 연동할 자리, 지금은 가상 샘플)
 	const eduList = $derived(members.filter(({ p }) => !!p.edu_dept));
 	const weekly = $derived(
-		WEEKS.map((date, i) => ({
+		WEEKS.map((date) => ({
 			date,
-			n: registry.worshipTotal(date, roster.filter((p) => registry.attended(p.id, date, WEEKS.length - 1 - i)).length),
-			e: eduList.filter(({ p }) => registry.attended(p.id, date, WEEKS.length - 1 - i)).length
+			n: registry.worshipTotal(date, roster.filter((p) => registry.attended(p.id, date)).length),
+			e: eduList.filter(({ p }) => registry.attended(p.id, date)).length
 		}))
 	);
 	const latest = $derived(weekly[weekly.length - 1]);
@@ -76,7 +76,7 @@
 			const k = unit === 'community' ? s.community : s.smallGroup;
 			const cur = m.get(k) ?? { total: 0, present: 0 };
 			cur.total++;
-			if (registry.groupAttended(p.id, latest.date, 0)) cur.present++;
+			if (registry.groupAttended(p.id, latest.date)) cur.present++;
 			m.set(k, cur);
 		}
 		return [...m.entries()].sort((a, b) => (unit === 'community' ? b[1].total - a[1].total : b[1].present / b[1].total - a[1].present / a[1].total));
@@ -84,7 +84,6 @@
 
 	// ---- 장기 결석: 교인구분이 '교인 › … › 예배출석·가끔출석'인 사람 중 2달 이상 주일에 나오지 않은 사람 ----
 	// (재적 상태가 아니라 교인구분 3단계를 기준으로 함. 불출석으로 분류된 사람은 이미 아는 경우라 뺌)
-	// [실제 시스템] 출석부의 주일 출석 기록에서 마지막 출석일을 구해 같은 규칙으로 고릅니다.
 	const LONG = recentSundays(26, today); // 최근 반년 주일
 	// 장기 결석 기준(주)과 새가족 기간(일)은 '관리자 › 교회 설정 › 연간 설정'에서 정함
 	const absentWeeks = $derived(registry.ys.absentWeeks);
@@ -99,7 +98,7 @@
 				for (let k = 0; k < LONG.length; k++) {
 					const sun = LONG[LONG.length - 1 - k];
 					if (!registry.hasWorshipRecord(sun)) continue; // 출석을 입력하지 않은 주일은 '기록 없음'이라 세지 않음
-					if (registry.attended(p.id, sun, k)) { lastSeen = sun; break; }
+					if (registry.attended(p.id, sun)) { lastSeen = sun; break; }
 					streak++;
 				}
 				return { p, s, streak, lastSeen };
@@ -110,7 +109,7 @@
 	);
 
 	// ---- 생일 ----
-	// [실제 시스템] 음력 생일은 그해 양력 날짜로 바꿔서 계산해야 합니다. (store.svelte.ts 의 캘린더 주석 참고)
+	// (음력 생일의 양력 변환은 앞으로 할 일입니다. store.svelte.ts 의 캘린더 주석 참고)
 	let range = $state<'week' | 'month'>('week');
 	const occurrences = $derived.by(() => {
 		const out: { id: string; name: string; kind: '생일'; md: string; d: number; n: number; lunar: boolean; group: string }[] = [];
@@ -135,11 +134,10 @@
 		return members.filter(({ p }) => p.birth_date && days.has(p.birth_date.slice(5))).length;
 	});
 	// 지난 주일의 소그룹·교육부서 출석
-	// [실제 시스템] 소그룹 출석과 교육부서 출석은 지금 홈페이지(출석부·교육부서 보고서)에서 운영 중입니다.
-	//   연동하면 그 주일의 출석 인원·재적 인원을 홈페이지에서 가져와 여기 숫자에 넣습니다. (지금은 가상 출석 샘플)
+	// 소그룹 출석은 저장된 소그룹 출석 기록으로, 교육부서 출석은 부서 관리와 연결된 기록을 우선해서 셉니다.
 	const pctOf = (x: { present: number; total: number }) => (x.total ? Math.round((x.present * 100) / x.total) : 0);
-	const attOf = (list: typeof members) => ({ total: list.length, present: list.filter(({ p }) => registry.attended(p.id, latest.date, 0)).length });
-	const groupAtt = $derived.by(() => { const l = members.filter(({ s }) => !!s.smallGroup); return { total: l.length, present: l.filter(({ p }) => registry.groupAttended(p.id, latest.date, 0)).length }; });
+	const attOf = (list: typeof members) => ({ total: list.length, present: list.filter(({ p }) => registry.attended(p.id, latest.date)).length });
+	const groupAtt = $derived.by(() => { const l = members.filter(({ s }) => !!s.smallGroup); return { total: l.length, present: l.filter(({ p }) => registry.groupAttended(p.id, latest.date)).length }; });
 	const eduAtt = $derived(attOf(members.filter(({ p }) => !!p.edu_dept)));
 	// 이번 분기(오늘이 속한 달의 분기) 새가족 등록
 	const quarter = Math.floor(today.getMonth() / 3) + 1;

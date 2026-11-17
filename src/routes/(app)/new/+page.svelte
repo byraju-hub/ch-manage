@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { todayIso } from '#lib/registry/calendar.ts';
 	import { hrefTo } from '#lib/registry/paths.ts';
 	// 교인 등록: 등록카드 순서대로 입력 (세대·신급·직분·소속·봉사·동의까지 한 번에). 위쪽에서 등록카드를 찍으면 칸을 자동으로 채움
 	import { goto } from '$app/navigation';
@@ -12,7 +13,7 @@
 		type ConsentKind, type ConsentMethod, type FaithKind, type Person
 	} from '#lib/registry/types.ts';
 
-	const today = new Date().toISOString().slice(0, 10);
+	const today = todayIso();
 	let f = $state<Record<string, any>>({
 		name: '', name_note: '', phone: '', gender: '', birth_date: '', birth_lunar: false, sms_opt_out: false, email: '', photo: '',
 		address_zip: '', address1: '', address2: '', occupation: '', workplace: '', car_number: '', marital_status: '', wedding_date: '',

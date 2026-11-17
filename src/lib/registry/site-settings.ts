@@ -1,5 +1,5 @@
 // 관리자 › 교회 설정 › 기본 설정 · 프로그램 설정 › 코드표 · 백업: 교회 기본 정보, 로고·직인, 증명서 양식, 바꿀 수 있는 코드표, 백업 설정
-// [실제 시스템] church_settings 표 한 줄(JSON)로 저장. 로고·직인 이미지는 비공개 저장소(관리자만 읽기)에 두고 경로만 저장.
+// 교회 정보·증명서 양식·코드표는 site_settings 표 한 줄(JSON)에 저장하고, 로고·직인·탭 아이콘 그림은 서버 파일로 두고 경로만 저장합니다.
 import { MISSION_SOCIETIES, VISIT_KINDS } from './types.ts';
 
 export interface ChurchInfo {

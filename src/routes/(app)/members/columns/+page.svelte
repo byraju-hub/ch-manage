@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { saveMemberSheet } from '#lib/registry/xlsx.ts';
 	import { hrefTo } from '#lib/registry/paths.ts';
 	// 교인 목록 (항목 설정): 상세 화면 없이 보는 목록. 교인 등록 때 적는 칸 중 고른 칸만 보임.
 	// 보기 형식: 한 줄 보기(표) / 카드 보기(왼쪽 사진·이름, 오른쪽 항목). 정렬, 보이는 그대로 엑셀 내려받기.
@@ -121,14 +122,8 @@
 	async function excel() {
 		busy = true;
 		try {
-			const { default: writeXlsxFile } = await import('write-excel-file/browser');
-			const st = { borderStyle: 'thin' as const, borderColor: '#999999', alignVertical: 'center' as const };
 			const xcols = cols.filter((c) => !c.photo); // 사진은 엑셀에 넣지 않음
-			const data = [
-				xcols.map((c) => ({ value: registry.tr(c.label), fontWeight: 'bold' as const, backgroundColor: '#E0E4F4', align: 'center' as const, ...st })),
-				...rows.map(({ p, s }) => xcols.map((c) => ({ value: c.get(p, s), ...st })))
-			];
-			await writeXlsxFile(data, { sheet: '교인 목록', columns: xcols.map((c) => ({ width: c.w ?? 12 })), stickyRowsCount: 1 }).toFile(`교인목록-${new Date().toISOString().slice(0, 10)}.xlsx`);
+			await saveMemberSheet({ header: xcols.map((c) => registry.tr(c.label)), body: rows.map(({ p, s }) => xcols.map((c) => c.get(p, s))), widths: xcols.map((c) => c.w ?? 12), headBg: '#E0E4F4' });
 			registry.log('내려받기', `교인 목록(항목 설정) ${rows.length}명 · ${xcols.map((c) => c.label).join('/')}`);
 		} finally {
 			busy = false;

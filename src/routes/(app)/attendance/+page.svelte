@@ -15,7 +15,6 @@
 	const WEEKS = thisYear.length >= 8 ? thisYear : ALL.slice(-8);
 	// 기본값: 오늘이 주일이면 오늘, 아니면 지난 주일
 	let date = $state(WEEKS[WEEKS.length - 1]);
-	const weeksFromEnd = $derived(WEEKS.length - 1 - WEEKS.indexOf(date));
 	const md = (iso: string) => `${+iso.slice(5, 7)}/${+iso.slice(8, 10)}`;
 	const dow = (iso: string) => (iso === WEEKS[WEEKS.length - 1] ? ' · 이번 주일' : '');
 
@@ -51,7 +50,7 @@
 		const hit = rows.filter((r) => { const hay = `${r.p.name} ${r.s.title} ${r.group} ${r.community}`; return words.every((w) => hay.includes(w)); });
 		return hit.map((r, i) => ({ ...r, first: i === 0 || hit[i - 1].group !== r.group }));
 	});
-	const isPresent = (pid: string) => registry.attended(pid, date, weeksFromEnd);
+	const isPresent = (pid: string) => registry.attended(pid, date);
 	const sumPresent = $derived(rows.filter((r) => isPresent(r.p.id)).length);
 
 	// 전체 출석 인원: 명단 체크와 따로 입력 (방문자 등 명단 밖 인원 포함). 그 외 = 전체 - 명단 체크

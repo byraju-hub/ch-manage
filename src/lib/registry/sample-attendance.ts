@@ -35,11 +35,6 @@ export function wasPresent(personId: string, sundayIso: string, weeksFromEnd: nu
 	return hash(personId + sundayIso) / 1000 < (RATE[personId] ?? 0.82);
 }
 
-// 주일 오전예배에 온 사람 중 명단에 체크되지 않는 인원 (방문자·타교인·명단 밖 교인 등) 가상 샘플: 20~44명
-export function sampleOthers(sundayIso: string): number {
-	return 20 + (hash('others' + sundayIso) % 25);
-}
-
 // 주일 오후 소그룹 모임 출석 (홈페이지 출석부에서 소그룹 인도자가 등록. 예배 출석과 별개)
 // 가상 샘플: 예배에 나온 사람 중 대부분이 소그룹 모임에도 참석
 export function wasPresentGroup(personId: string, sundayIso: string, weeksFromEnd: number): boolean {

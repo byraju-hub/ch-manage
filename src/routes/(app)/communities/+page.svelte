@@ -17,7 +17,7 @@
 			if (!p || !registry.summary(p).memberCert) continue;
 			const cur = m.get(g.small_group) ?? { total: 0, present: 0 };
 			cur.total++;
-			if (registry.groupAttended(p.id, latest, 0)) cur.present++;
+			if (registry.groupAttended(p.id, latest)) cur.present++;
 			m.set(g.small_group, cur);
 		}
 		return m;

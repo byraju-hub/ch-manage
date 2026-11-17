@@ -13,7 +13,7 @@
 	const members = $derived(registry.d.people.map((p) => ({ p, s: registry.summary(p) })).filter((x) => x.s.memberCert));
 
 	// ---- 주일 출석: 장년 / 교육부서 ----
-	const attend = (list: typeof members) => WEEKS.map((d, i) => list.filter(({ p }) => registry.attended(p.id, d, WEEKS.length - 1 - i)).length);
+	const attend = (list: typeof members) => WEEKS.map((d) => list.filter(({ p }) => registry.attended(p.id, d)).length);
 	const adult = $derived(members.filter((x) => x.s.cat2 === '장년' || (x.s.cat2 === '새가족' && !x.p.edu_dept)));
 	const adultWeekly = $derived(attend(adult));
 	const depts = $derived(EDU_DEPTS.map((d) => {
@@ -47,7 +47,7 @@
 		registry.d.smallGroups.filter((g) => comm === '전체' || g.community === comm).sort((a, b) => a.community.localeCompare(b.community, 'ko') || a.sort_order - b.sort_order).map((g) => {
 			const l = members.filter((x) => x.s.smallGroup === g.name);
 			// 주일 오후 소그룹 모임 출석 (홈페이지 출석부에서 인도자가 등록)
-			const weekly = WEEKS.map((d, i) => l.filter(({ p }) => registry.groupAttended(p.id, d, WEEKS.length - 1 - i)).length);
+			const weekly = WEEKS.map((d) => l.filter(({ p }) => registry.groupAttended(p.id, d)).length);
 			const avg4 = l.length ? Math.round((weekly.slice(-4).reduce((a, b) => a + b, 0) * 100) / (l.length * 4)) : 0;
 			return { g, total: l.length, weekly, avg4 };
 		})

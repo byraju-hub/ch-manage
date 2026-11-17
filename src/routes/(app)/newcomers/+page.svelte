@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { todayIso } from '#lib/registry/calendar.ts';
 	import { hrefTo } from '#lib/registry/paths.ts';
 	import { registry } from '#lib/registry/store.svelte.ts';
 	import { ageOf, ageText } from '#lib/registry/derive.ts';
@@ -7,10 +8,10 @@
 
 	// 새가족 정착 흐름: 등록 → 새가족 교육 → 수료 → 소그룹 배정 → 정착 완료
 	// '정착 완료'를 누르면 교인구분 2단계가 새가족 → 장년(또는 나이에 맞는 부서)으로 바뀝니다.
-	// [실제 시스템] 단계는 교육 기록·소그룹 소속·교인구분에서 계산하므로 따로 저장하지 않습니다.
+	// 단계는 교육 기록·소그룹 소속·교인구분에서 계산하므로 따로 저장하지 않습니다.
 	const STAGES = ['등록', '교육 중', '수료', '소그룹 배정', '정착 완료'] as const;
 	type Stage = (typeof STAGES)[number];
-	const today = new Date().toISOString().slice(0, 10);
+	const today = todayIso();
 	const dayMs = 864e5;
 
 	const list = $derived.by(() => {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isoDate } from '#lib/registry/calendar.ts';
 	import { hrefTo } from '#lib/registry/paths.ts';
 	import { page } from '$app/state';
 	import { registry } from '#lib/registry/store.svelte.ts';
@@ -52,7 +53,7 @@
 
 	// ---- 기부금 영수증 ----
 	// 헌금 자료는 아직 연동하지 않아(스데반정보 덤프 미정) 기간·내용·금액을 직접 적음. 주민등록번호는 교적에 두지 않으므로 영수증에 빈칸으로 두고 발급할 때 손으로 적음
-	// [실제 시스템] 헌금번호 ↔ 교적 ID 가 이어지면 기부 연도만 고르면 금액이 자동으로 채워지게 함
+	// 헌금 금액은 이 프로그램이 모르므로 직접 입력합니다. (재정 관리가 설치돼 있으면 거기서 영수증을 발급하도록 아래에 안내가 나옵니다)
 	type DonRow = { from: string; to: string; kind: string; amount: string };
 	const donYears = Array.from({ length: 5 }, (_, i) => now.getFullYear() - i);
 	let finErr = $state('');
@@ -130,7 +131,7 @@
 	});
 	const pname = (id: string | null) => (id ? registry.person(id)?.name ?? '' : '');
 	const ready = $derived(!needsPerson || (!!p && (doc !== '세례증명서' || !!baptism) && (doc !== '기부금 영수증' || donTotal > 0)));
-	const fileName = $derived(`${doc}${p && needsPerson ? `-${p.name}` : doc === '생일 명단' ? `-${month}월` : ''}-${now.toISOString().slice(0, 10)}.pdf`);
+	const fileName = $derived(`${doc}${p && needsPerson ? `-${p.name}` : doc === '생일 명단' ? `-${month}월` : ''}-${isoDate(now)}.pdf`);
 
 	const numbered = $derived(needsPerson && doc !== '교적부');
 	/** 출력을 기록한다. 번호가 붙는 증명서는 서버에서 번호를 받아 문서에 먼저 반영한다. 실패하면 false(출력하지 않음). */
@@ -298,7 +299,7 @@
 	<div class="sheet-wrap">
 		<div class="sheet" class:one-page={onePage} bind:this={sheet}>
 			{#if doc === '교적부' && p && s}
-				<div class="doc-head"><span>{CHURCH}</span><h2>교 적 부</h2><span>출력일 {ymd(now.toISOString().slice(0, 10))}</span></div>
+				<div class="doc-head"><span>{CHURCH}</span><h2>교 적 부</h2><span>출력일 {ymd(isoDate(now))}</span></div>
 				<table class="dt">
 					<tbody>
 						<tr>
@@ -418,7 +419,7 @@
 					{#each birthdays as { p: x, s: xs } (x.id)}<tr><td class="c">{md(x.birth_date)}</td><td><b>{x.name}</b></td><td>{xs.title}</td><td class="c">{x.birth_lunar ? '음력' : '양력'}</td><td class="c">{(ageOf(x.birth_date) ?? 0) + (+x.birth_date!.slice(5, 7) > now.getMonth() + 1 ? 1 : 0)}</td><td>{xs.smallGroup ? `${registry.short(xs.community)} · ${xs.smallGroup}` : ''}</td><td>{v(x.phone)}</td></tr>
 					{:else}<tr><td colspan="7" class="c">이 달 생일자가 없습니다.</td></tr>{/each}
 				</tbody></table>
-				<p class="foot-note">음력 생일은 해당 연도의 양력 날짜로 바꿔야 정확합니다. (실제 시스템에서 변환)</p>
+				<p class="foot-note">음력 생일은 같은 월·일로 표시하므로, 그해 양력 날짜와 다를 수 있습니다.</p>
 
 			{:else if doc === '교회 조직표'}
 				<div class="doc-head"><span>{CHURCH}</span><h2>{now.getFullYear()}년도 교회 조직표</h2><span>{todayKo}</span></div>
@@ -506,9 +507,7 @@
 	.seal-wrap { position: relative; display: inline-block; margin-left: 4mm; }
 	.seal-img { position: absolute; left: 50%; top: 50%; width: 22mm; height: 22mm; transform: translate(-50%, -50%) rotate(-3deg); object-fit: contain; mix-blend-mode: multiply; opacity: 0.92; }
 	@media print {
-		:global(.site-header), :global(.site-footer), :global(.tabbar), :global(.to-top), .no-print { display: none !important; }
-		:global(.site > main) { padding: 0 !important; max-width: none !important; }
-		:global(body) { background: #fff !important; }
+		.no-print { display: none !important; }
 		.sheet-wrap { padding: 0; overflow: visible; }
 		.sheet { box-shadow: none; border: 0; width: auto; min-height: 0; padding: 0; }
 		.dt tr { break-inside: avoid; }

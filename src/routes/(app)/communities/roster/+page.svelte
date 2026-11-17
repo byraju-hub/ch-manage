@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { todayIso } from '#lib/registry/calendar.ts';
 	import { hrefTo } from '#lib/registry/paths.ts';
 	// 소그룹별 명단: 2026년 편성표 순서(뿌리 → 줄기 → 열매, 소그룹도 편성표 순서), 마지막에 미지정자(장년 예배·가끔출석 중 공동체 없는 사람).
 	// 각 명단은 가나다순, 올해(1월 1일 ~ 지난 주일) 소그룹 모임 출석률(출석을 기록한 주일만 셈)로 색 구분 (80% 이상 / 50~79% / 50% 미만), 인도자는 파랑
@@ -25,9 +26,9 @@
 	});
 	const rateOf = (id: string, registered: string | null, group: string | null | undefined) => {
 		const recorded = (group && recordedOf.get(group)) || [];
-		const ws = recorded.map((d, i) => ({ d, back: recorded.length - 1 - i })).filter((w) => !registered || w.d >= registered);
+		const ws = recorded.filter((d) => !registered || d >= registered).map((d) => ({ d }));
 		if (!ws.length) return 0;
-		return Math.round((ws.filter((w) => registry.groupAttended(id, w.d, w.back)).length * 100) / ws.length);
+		return Math.round((ws.filter((w) => registry.groupAttended(id, w.d)).length * 100) / ws.length);
 	};
 	const band = (r: number) => (r >= 80 ? 'hi' : r >= 50 ? 'mid' : 'lo');
 	type Row = (typeof active)[number] & { rate: number };
@@ -65,7 +66,7 @@
 	const shownCount = $derived(shown.reduce((s, c) => s + c.groups.reduce((t, g) => t + g.xs.length, 0), 0));
 
 	// ---- 출력 · PDF: 지금 고른 공동체·소그룹만, 출석률 색 없이 가나다순 표로 ----
-	const today = new Date().toISOString().slice(0, 10);
+	const today = todayIso();
 	const leaderOf = (name: string) => { const id = registry.groupDef(name)?.leader_id; return id ? registry.person(id)?.name ?? '' : ''; };
 	const scope = $derived(group ? `${comm} › ${group}` : comm || `전체 ${registry.t1}`);
 	// 인쇄·PDF 맨 위 제목: 예) '헵시바 소그룹 명단', '줄기 공동체 명단', '전체 공동체 명단'
@@ -270,9 +271,7 @@
 	.rt tr { break-inside: avoid; }
 	.sh-foot { margin-top: 6mm; font-size: 8pt; color: #777; text-align: right; }
 	@media print {
-		:global(.site-header), :global(.site-footer), :global(.tabbar), :global(.to-top), :global(.warn), .no-print { display: none !important; }
-		:global(.site > main) { padding: 0 !important; max-width: none !important; }
-		:global(body) { background: #fff !important; }
+		:global(.warn), .no-print { display: none !important; }
 		.print-wrap { position: static; width: auto; height: auto; overflow: visible; }
 		.sheet { width: auto; }
 	}

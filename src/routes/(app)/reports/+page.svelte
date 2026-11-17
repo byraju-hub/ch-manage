@@ -84,5 +84,5 @@
 			{#each bands as [label, lo, hi]}<tr><td>{label}</td>
 				{#each ['M', 'F'] as g}<td>{count(({ p, s }) => s.memberCert && p.gender === g && (ageOf(p.birth_date) ?? -1) >= lo && (ageOf(p.birth_date) ?? -1) <= hi)}</td>{/each}</tr>{/each}
 		</tbody></table></div>
-	<p class="muted">더 필요한 것: 노회(합동) 보고 서식. 기본 통계 화면은 실제 시스템에 아직 없습니다.</p>
+	<p class="muted">더 필요한 것: 노회(합동) 보고 서식</p>
 {/if}

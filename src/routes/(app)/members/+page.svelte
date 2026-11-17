@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { todayIso } from '#lib/registry/calendar.ts';
+	import { saveMemberSheet } from '#lib/registry/xlsx.ts';
 	import { hrefTo } from '#lib/registry/paths.ts';
 	// 교인 목록: 검색(기본·복수·항목별)과 필터, 왼쪽 목록 · 오른쪽 상세, 내려받기
 	import { page } from '$app/state';
@@ -86,7 +88,7 @@
 	const selSummary = $derived(sel ? registry.summary(sel) : null);
 	const selFamily = $derived.by(() => { const h = sel ? registry.householdOf(sel.id) : undefined; return h ? registry.membersOfHousehold(h.id) : []; });
 	const selNotes = $derived(sel ? registry.d.notes.filter((n) => n.person_id === sel.id).slice(0, 3) : []);
-	const selVisits = $derived(sel ? registry.d.visits.filter((v) => v.person_id === sel.id && v.visit_date <= new Date().toISOString().slice(0, 10)).sort((a, b) => b.visit_date.localeCompare(a.visit_date)).slice(0, 2) : []);
+	const selVisits = $derived(sel ? registry.d.visits.filter((v) => v.person_id === sel.id && v.visit_date <= todayIso()).sort((a, b) => b.visit_date.localeCompare(a.visit_date)).slice(0, 2) : []);
 	// 조건이 바뀌면 목록을 처음 200명으로 되돌림
 	$effect(() => { rows.length; shown = 200; });
 
@@ -112,15 +114,9 @@
 	async function download() {
 		xlBusy = true;
 		try {
-			const writeXlsxFile = (await import('write-excel-file/browser')).default;
 			const cols = Object.keys(COLS).filter((c) => picked.includes(c));
-			const st = { borderStyle: 'thin' as const, borderColor: '#999999', align: 'center' as const, alignVertical: 'center' as const };
-			const data = [
-				cols.map((c) => ({ value: registry.tr(c), fontWeight: 'bold' as const, backgroundColor: '#E9ECEF', ...st })),
-				...rows.map(({ p, s }) => cols.map((c) => ({ value: COLS[c](p, s), ...st })))
-			];
 			const W: Record<string, number> = { 이름: 10, 동명이인구분: 8, 성별: 6, 생년월일: 12, 나이: 6, 휴대폰: 15, 주소: 40, 직분: 10, 상태: 8, 교인구분: 24, 전도회: 10, 신급: 8, 공동체: 12, 소그룹: 12, 등록일: 12, 차량번호: 12 };
-			await writeXlsxFile(data, { sheet: '교인 목록', columns: cols.map((c) => ({ width: W[c] ?? 12 })), stickyRowsCount: 1 }).toFile(`교인목록-${new Date().toISOString().slice(0, 10)}.xlsx`);
+			await saveMemberSheet({ header: cols.map((c) => registry.tr(c)), body: rows.map(({ p, s }) => cols.map((c) => COLS[c](p, s))), widths: cols.map((c) => W[c] ?? 12), headBg: '#E9ECEF', centerBody: true });
 			registry.log('내려받기', `${rows.length}명 · ${cols.join('/')}`);
 		} finally {
 			xlBusy = false;
@@ -298,7 +294,7 @@
 
 {#if registry.perms.export}
 	<div class="card">
-		<h2>내려받기 <span class="muted" style="font-weight:400">— 필요한 칸만 골라 엑셀로 · 용도를 적어야 함(실제 시스템)</span></h2>
+		<h2>내려받기 <span class="muted" style="font-weight:400">— 필요한 칸만 골라 엑셀로</span></h2>
 		<div class="cols">
 			{#each Object.keys(COLS) as c}<label><input type="checkbox" value={c} bind:group={picked} />{registry.tr(c)}</label>{/each}
 		</div>
