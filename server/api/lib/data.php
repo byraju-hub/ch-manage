@@ -238,7 +238,7 @@ function data_specs(): array
         'accessLog' => [
             'table' => 'access_log', 'idcols' => ['id'], 'idkinds' => ['uuid'], 'level' => 4, 'append' => true,
             'read' => 'admin', 'write' => 'any', 'order' => 'm.at DESC, m.seq DESC', 'limit' => 500, 'stamp' => 'data_stamp_access_log',
-            'cols' => ['at' => ['DT'], 'who' => ['z', 50], 'action' => ['S', 40], 'target' => ['z', 100]],
+            'cols' => ['at' => ['DT'], 'who' => ['z', 50], 'ip' => ['z', 45], 'action' => ['S', 40], 'target' => ['z', 100]],
         ],
     ];
     return $s;
@@ -522,6 +522,7 @@ function data_stamp_access_log(array &$vals, bool $isInsert, array $ctx): void
 {
     if (!$isInsert) { $vals = []; return; }
     $vals['who'] = $ctx['user']['name'];
+    $vals['ip'] = client_ip() ?: null; // 접속지(IP): 접속기록에 남겨야 하는 항목
     $vals['user_id'] = (int)$ctx['user']['id'];
     $vals['at'] = date('Y-m-d H:i:s');
 }

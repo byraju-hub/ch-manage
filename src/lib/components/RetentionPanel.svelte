@@ -40,7 +40,7 @@
 		<label class="row" style="gap:.4rem;margin-bottom:.6rem"><input type="checkbox" style="width:auto" bind:checked={cfg.auto} />자동으로 정리 <small class="hint">(프로그램을 쓰는 중에 하루에 한 번 확인합니다)</small></label>
 		<div class="form">
 			<label>인적사항을 지우기까지 <small class="hint">(전출·별세·제적 후 몇 년)</small><input type="number" min="1" max="30" bind:value={cfg.years} /></label>
-			<label>접속·수정 기록 보관 <small class="hint">(몇 년)</small><input type="number" min="1" max="10" bind:value={cfg.logYears} /></label>
+			<label>접속·수정 기록 보관 <small class="hint">(몇 년 · 법 기준에 따라 최소 2년)</small><input type="number" min="2" max="10" bind:value={cfg.logYears} /></label>
 		</div>
 		{#if st}
 			<p class="muted" style="font-size:.85rem;margin:.6rem 0 0">지금 정리 대상: 교인 <b style="color:var(--text)">{st.due}명</b>, 오래된 기록 <b style="color:var(--text)">{st.oldLogs}건</b>{#if st.result} · 마지막 정리 {st.result.at} (교인 {st.result.people}명, 기록 {st.result.logs}건){/if}</p>

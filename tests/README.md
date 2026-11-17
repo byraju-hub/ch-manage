@@ -21,6 +21,8 @@ Windows + XAMPP(PHP 8.x, MariaDB) + Edge 에서 만들었고, 다른 환경이�
 | `ui-sso.cjs` | 화면: 재정 버튼·설정 칸·기부금 영수증 안내 | `node tests/ui-sso.cjs <결과 폴더>` |
 | `ui-nav.cjs` | 화면: 상단 메뉴가 폭마다 한 줄로 나오는지 | `node tests/ui-nav.cjs <결과 폴더>` |
 | `priv-check.cjs`, `foot-check.cjs`, `contact-check.cjs` | 개인정보 처리방침 화면·링크·책임자 칸 | `node tests/<파일> <결과 폴더>` |
+| `privacy-test.mjs` | 서버 쪽: 접속 기록 접속 주소·보관 최소 2년·책임자 칸 (12개) | `node tests/privacy-test.mjs http://127.0.0.1:8090/cm` (새로 설치한 직후) |
+| `consent-check.cjs` | 화면: 개인정보 동의 명단·접속 주소 열·처리방침 보완 (샘플 자료를 자동으로 넣음) | `node tests/consent-check.cjs <결과 폴더>` |
 | `pdf-check.cjs` | 문서 PDF 내려받기, 엑셀 내려받기 | `node tests/pdf-check.cjs <결과 폴더>` (샘플 자료를 자동으로 넣음) |
 
 참고: 화면 시험은 `ui-sso.cjs` 처럼 이름 그대로가 아닌 버튼 글자("재정 열기" → "재정")가 바뀌면 고쳐야 할 수 있습니다.

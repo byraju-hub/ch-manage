@@ -12,7 +12,7 @@
 	import CarePreview from '#lib/components/CarePreview.svelte';
 	import { ageOf, ageText, officeWithKind } from '#lib/registry/derive.ts';
 	import {
-		STATUS_KINDS, FAITH_KINDS, POSITIONS, ORDAINED, parseRank, rankChoices, rankLabel, CONSENT_KINDS, FULL_TIME_CLERGY,
+		STATUS_KINDS, FAITH_KINDS, POSITIONS, ORDAINED, parseRank, rankChoices, rankLabel, CONSENT_KINDS, POLICY_VERSION, FULL_TIME_CLERGY,
 		type StatusKind, type FaithKind, type ConsentKind, type VisitMethod
 	} from '#lib/registry/types.ts';
 
@@ -378,7 +378,7 @@
 				{:else}<tr><td colspan="7" class="muted">동의 기록 없음</td></tr>{/each}
 			</tbody></table>
 			{#if can}
-				<form class="form" style="margin-top:.7rem" onsubmit={(e) => { e.preventDefault(); registry.addConsent({ person_id: p.id, kind: cs.kind, policy_version: '2026-01', consent_date: today, method: cs.method, guardian_name: nn(cs.guardian), revoked_on: null }); cs.guardian = ''; }}>
+				<form class="form" style="margin-top:.7rem" onsubmit={(e) => { e.preventDefault(); registry.addConsent({ person_id: p.id, kind: cs.kind, policy_version: POLICY_VERSION, consent_date: today, method: cs.method, guardian_name: nn(cs.guardian), revoked_on: null }); cs.guardian = ''; }}>
 					<label>종류<select bind:value={cs.kind}>{#each CONSENT_KINDS as k}<option>{k}</option>{/each}</select></label>
 					<label>방법<select bind:value={cs.method}>{#each ['서면', '앱', '구두'] as k}<option>{k}</option>{/each}</select></label>
 					<label>보호자 이름(14세 미만)<input bind:value={cs.guardian} /></label>

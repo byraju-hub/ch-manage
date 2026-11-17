@@ -31,7 +31,7 @@
 	}
 	const shown = $derived(active.filter((u) => !q || `${u.name} ${u.login_id} ${u.email ?? ''} ${u.note ?? ''}`.includes(q)));
 	let logQ = $state('');
-	const logs = $derived(registry.d.accessLog.filter((l) => !logQ || `${l.who} ${l.action} ${l.target}`.includes(logQ)).slice(0, 200));
+	const logs = $derived(registry.d.accessLog.filter((l) => !logQ || `${l.who} ${l.ip ?? ''} ${l.action} ${l.target}`.includes(logQ)).slice(0, 200));
 	const count = (g: Grade) => registry.users.filter((u) => u.status === '사용' && u.grade === g && !u.is_super).length;
 </script>
 
@@ -140,11 +140,11 @@
 	</div>
 {:else}
 	<div class="card">
-		<div class="toolbar"><input type="search" placeholder="회원 · 행동 · 대상 검색" bind:value={logQ} /></div>
-		<p class="muted" style="margin:0 0 .6rem">로그인 · 검색 · 열람 · 수정 · 내려받기 · 출력 · 심방 · 회원·등급 변경을 남깁니다. (3년 보관)</p>
-		<table class="sm"><thead><tr><th>시각</th><th>누가</th><th>무엇을</th><th>대상</th></tr></thead><tbody>
-			{#each logs as l (l.id)}<tr><td style="white-space:nowrap">{l.at}</td><td>{l.who}</td><td>{l.action}</td><td>{l.target}</td></tr>
-			{:else}<tr><td colspan="4" class="muted">아직 기록이 없습니다.</td></tr>{/each}
+		<div class="toolbar"><input type="search" placeholder="회원 · 접속 주소 · 행동 · 대상 검색" bind:value={logQ} /></div>
+		<p class="muted" style="margin:0 0 .6rem">로그인 · 검색 · 열람 · 수정 · 내려받기 · 출력 · 심방 · 회원·등급 변경을 남깁니다. 접속한 주소(IP)도 함께 남습니다. (보관 기간은 '프로그램 설정 › 개인정보 정리'에서 정하며 최소 2년)</p>
+		<table class="sm"><thead><tr><th>시각</th><th>누가</th><th>접속 주소</th><th>무엇을</th><th>대상</th></tr></thead><tbody>
+			{#each logs as l (l.id)}<tr><td style="white-space:nowrap">{l.at}</td><td>{l.who}</td><td style="white-space:nowrap">{l.ip ?? '-'}</td><td>{l.action}</td><td>{l.target}</td></tr>
+			{:else}<tr><td colspan="5" class="muted">아직 기록이 없습니다.</td></tr>{/each}
 		</tbody></table>
 	</div>
 {/if}

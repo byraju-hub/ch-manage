@@ -5,6 +5,7 @@
 //  - 권한은 서버가 계산해서 내려 준 값(registry.perms)을 보여 주기만 한다. 서버는 모든 요청에서 로그인·등급을 다시 확인한다.
 //  - 화면 데이터와 서버 표의 대응은 tables.ts(화면 쪽)와 server/api/lib/data.php(서버 쪽)에 있다.
 import type * as T from './types.ts';
+import { POLICY_VERSION } from './types.ts';
 import { auth } from './auth.svelte.ts';
 import { sync } from './sync.svelte.ts';
 import { dm } from './dm.svelte.ts';
@@ -954,7 +955,7 @@ class Registry {
 		this.d.people.push({ ...p, id });
 		this.d.statusEvents.push({ id: uid(), person_id: id, kind: '등록', event_date: regDate, reason: '새가족', church: null });
 		for (const kind of consents)
-			this.d.consents.push({ id: uid(), person_id: id, kind, policy_version: '2026-01', consent_date: today(), method, guardian_name: null, revoked_on: null });
+			this.d.consents.push({ id: uid(), person_id: id, kind, policy_version: POLICY_VERSION, consent_date: today(), method, guardian_name: null, revoked_on: null });
 		this.change(id, '교적 카드', '교인 등록');
 		this.assignNameNotes(p.name);
 		this.log('수정', p.name);

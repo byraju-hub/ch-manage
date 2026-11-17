@@ -232,10 +232,13 @@ function cert_next_number(int $year): int
 
 // ===================================================== 개인정보 정리 =====================================================
 
+/** 접속·수정 기록은 최소 2년 보관 (개인정보의 안전성 확보조치 기준: 민감정보를 처리하는 시스템은 접속기록 2년 이상) */
+const LOG_YEARS_MIN = 2;
+
 function retention_cfg(): array
 {
     $c = json_decode((string)meta_get('retention'), true) ?: [];
-    return ['auto' => $c['auto'] ?? true, 'years' => max(1, min(30, (int)($c['years'] ?? 5))), 'logYears' => max(1, min(10, (int)($c['logYears'] ?? 3)))];
+    return ['auto' => $c['auto'] ?? true, 'years' => max(1, min(30, (int)($c['years'] ?? 5))), 'logYears' => max(LOG_YEARS_MIN, min(10, (int)($c['logYears'] ?? 3)))];
 }
 
 /** 전출·별세·제적(마지막 재적 상태)이고 그 날짜로부터 $years 년이 지났는데 아직 정리하지 않은 교인(샘플 제외). @return string[] 교인 id */

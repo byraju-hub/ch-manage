@@ -4,7 +4,7 @@
 	import { registry } from '#lib/registry/store.svelte.ts';
 	import { ageOf } from '#lib/registry/derive.ts';
 
-	const tabs = ['생일', '직분자 명단', '학습·세례 대상자', '교세 통계'];
+	const tabs = ['생일', '직분자 명단', '학습·세례 대상자', '개인정보 동의', '교세 통계'];
 	let tab = $state(tabs[0]);
 	let mode = $state<'week' | 'month'>('month');
 
@@ -39,6 +39,23 @@
 		all.filter(({ s, p }) => s.memberCert && ['미확인', '원입교인', '학습교인'].includes(s.faith) && (ageOf(p.birth_date) ?? 99) >= 14)
 	);
 
+	// 개인정보 동의 확인: 재적 교인 중 동의 기록이 없는(또는 철회한) 사람. 14세 미만은 보호자 동의도 필요.
+	// 동의 기록은 교적 카드의 '동의 기록'에서 남긴다.
+	const hasConsent = (id: string, kind: string) => registry.d.consents.some((c) => c.person_id === id && c.kind === kind && !c.revoked_on);
+	const consentRows = $derived(
+		active
+			.map(({ p }) => {
+				const age = ageOf(p.birth_date);
+				const child = age !== null && age < 14;
+				const need = ['교적 등록', '민감정보', ...(child ? ['보호자 동의'] : [])];
+				return { p, age, child, miss: need.filter((k) => !hasConsent(p.id, k)) };
+			})
+			.filter((r) => r.miss.length)
+			.sort((a, b) => Number(b.child) - Number(a.child) || a.p.name.localeCompare(b.p.name, 'ko'))
+	);
+	let consentOnly = $state<'all' | 'child'>('all');
+	const consentShown = $derived(consentOnly === 'child' ? consentRows.filter((r) => r.child) : consentRows);
+
 	const count = (fn: (x: (typeof all)[number]) => boolean) => all.filter(fn).length;
 	const bands = [['0–12세', 0, 12], ['13–19세', 13, 19], ['20–39세', 20, 39], ['40–59세', 40, 59], ['60세 이상', 60, 200]] as const;
 </script>
@@ -68,6 +85,16 @@
 			{#each targets as { p, s }}<tr><td><a href={hrefTo(`/${p.id}`)}>{p.name}</a></td><td>{ageOf(p.birth_date) ?? '-'}</td><td>{s.faith}</td><td>{s.registered ?? '미상'}</td></tr>{:else}<tr><td colspan="4" class="muted">해당 없음</td></tr>{/each}
 		</tbody></table>
 		<p class="muted">더 필요한 것: 신급 '미확인'을 먼저 확인해야 정확함.</p>
+	</div>
+{:else if tab === '개인정보 동의'}
+	<div class="card">
+		<p style="margin:0 0 .6rem">재적 교인 <b>{active.length}명</b> 중 동의 기록이 빠진 사람은 <b>{consentRows.length}명</b>입니다. 14세 미만 어린이는 부모님 등 <b>보호자 동의</b>도 있어야 합니다.</p>
+		<div class="row"><button class:ghost={consentOnly !== 'all'} onclick={() => (consentOnly = 'all')}>모두 ({consentRows.length})</button><button class:ghost={consentOnly !== 'child'} onclick={() => (consentOnly = 'child')}>14세 미만 ({consentRows.filter((r) => r.child).length})</button></div>
+		<table class="sm"><thead><tr><th>이름</th><th>나이</th><th>빠진 동의</th></tr></thead><tbody>
+			{#each consentShown.slice(0, 300) as r}<tr><td><a href={hrefTo(`/${r.p.id}`)}>{r.p.name}</a></td><td>{r.age ?? '-'}</td><td>{r.miss.join(' · ')}</td></tr>{:else}<tr><td colspan="3" class="muted">동의 기록이 빠진 교인이 없습니다.</td></tr>{/each}
+		</tbody></table>
+		{#if consentShown.length > 300}<p class="muted">처음 300명만 보여 드립니다. 동의를 받은 만큼 줄어듭니다.</p>{/if}
+		<p class="muted">이름을 누르면 교적 카드가 열리고, '메모·동의' 탭의 '동의 기록'에서 동의한 날짜와 방법(서면·구두·앱)을 남길 수 있습니다. 등록카드 동의 문구와 부모님 동의서 서식은 docs/privacy-forms.html 에 있습니다.</p>
 	</div>
 {:else}
 	<div class="grid">

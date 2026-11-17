@@ -70,6 +70,8 @@ export const MISSION_SOCIETIES: string[] = [
 	...Array.from({ length: 10 }, (_, i) => `${i + 1}여전도회`)
 ];
 export const RELATIONS = ['본인', '배우자', '자녀', '부모', '며느리', '사위', '손자녀', '형제자매', '기타'];
+/** 지금 처리방침의 판(시행일). 동의를 기록할 때 이 값이 함께 남는다. 처리방침 화면의 내용을 바꾸면 이 날짜도 함께 바꾼다. */
+export const POLICY_VERSION = '2026-11-17';
 export const CONSENT_KINDS: ConsentKind[] = ['교적 등록', '민감정보', '요람 공개', '보호자 동의'];
 // 기본 심방 구분 목록 (교회 설정 › 코드표에서 바꿀 수 있음)
 export const VISIT_KINDS = ['대심방', '새신자', '일반', '결혼', '출산', '돌', '입학', '졸업', '회갑', '장례', '추도', '개업', '이사', '병문안', '전도'];
@@ -236,6 +238,7 @@ export interface AccessLogEntry {
 	id: string;
 	at: string;
 	who: string;
+	ip?: string | null; // 접속지(IP 주소). 이 칸을 더하기 전의 기록은 비어 있음
 	action: string; // 검색, 열람, 수정, 내려받기, 출력
 	target: string;
 }

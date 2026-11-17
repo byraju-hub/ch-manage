@@ -291,7 +291,7 @@ route('GET', '/retention/status', function () {
 route('POST', '/retention/config', function () {
     require_super();
     $b = body();
-    meta_set('retention', json_encode(['auto' => !empty($b['auto']), 'years' => max(1, min(30, (int)($b['years'] ?? 5))), 'logYears' => max(1, min(10, (int)($b['logYears'] ?? 3)))]));
+    meta_set('retention', json_encode(['auto' => !empty($b['auto']), 'years' => max(1, min(30, (int)($b['years'] ?? 5))), 'logYears' => max(LOG_YEARS_MIN, min(10, (int)($b['logYears'] ?? 3)))]));
     audit('개인정보 정리 설정');
     json_out(retention_payload());
 });

@@ -178,8 +178,8 @@ function audit(string $action, string $target = '', ?array $detail = null): void
         // 자세한 내용(detail)은 한 줄로 줄여 대상 칸에 붙인다 (접속 기록 표에는 대상 칸 하나뿐)
         if ($detail) $target = trim($target . ' ' . json_encode($detail, JSON_UNESCAPED_UNICODE));
         q(
-            'INSERT INTO ' . t('access_log') . ' (id, user_id, who, action, target) VALUES (?,?,?,?,?)',
-            [new_uuid(), $uid, mb_substr($who, 0, 50), mb_substr($action, 0, 40), mb_substr($target, 0, 100)]
+            'INSERT INTO ' . t('access_log') . ' (id, user_id, who, ip, action, target) VALUES (?,?,?,?,?,?)',
+            [new_uuid(), $uid, mb_substr($who, 0, 50), client_ip() ?: null, mb_substr($action, 0, 40), mb_substr($target, 0, 100)]
         );
     } catch (Throwable $e) {
         cm_log('error', 'audit: ' . $e->getMessage());
