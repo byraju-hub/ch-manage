@@ -111,6 +111,9 @@
 		<label>홈페이지<input bind:value={info.homepage} placeholder="https://" /></label>
 		<label>서명 직함<input bind:value={info.pastorLabel} placeholder="담임목사" /></label>
 		<label><span class="lt">서명 이름 <small class="hint">(비우면 교적의 담임목사)</small></span><input bind:value={info.pastorName} /></label>
+		<label><span class="lt">개인정보 보호책임자 <small class="hint">(개인정보 처리방침에 보임)</small></span><input bind:value={info.privacyOfficer} placeholder="예: 담임목사 홍길동" maxlength="100" /></label>
+		<label><span class="lt">개인정보 문의 전화 <small class="hint">(비우면 대표 전화)</small></span><input bind:value={info.privacyPhone} placeholder="032-000-0000" maxlength="100" /></label>
+		<label><span class="lt">개인정보 문의 이메일 <small class="hint">(비우면 위 이메일)</small></span><input type="email" bind:value={info.privacyEmail} maxlength="100" /></label>
 	</div>
 	<!-- 모임 이름 (2단계): 화면 전체의 '공동체'·'소그룹'이 이 이름으로 바뀜 -->
 	<div class="units">

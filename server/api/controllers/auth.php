@@ -7,11 +7,15 @@ declare(strict_types=1);
 /** 화면이 로그인 상태를 알기 위한 묶음. 로그인하지 않았으면 user 가 null. */
 function me_payload(?array $u): array
 {
-    $church = (string)val("SELECT JSON_VALUE(church_info, '$.name') FROM " . t('site_settings') . ' WHERE id = 1');
-    if (!$u) return ['church' => $church, 'user' => null, 'demoAccount' => demo_account_exists(), 'csrf' => csrf_token()];
+    $ci = json_decode((string)val('SELECT church_info FROM ' . t('site_settings') . ' WHERE id = 1'), true) ?: [];
+    $church = (string)($ci['name'] ?? '');
+    // 개인정보 처리방침 화면(로그인 전에도 열림)에 보일 책임자·문의처. 비워 두면 교회 대표 전화·이메일을 쓴다.
+    $s = fn(string $k): string => mb_substr(trim((string)($ci[$k] ?? '')), 0, 100);
+    $privacy = ['officer' => $s('privacyOfficer'), 'phone' => $s('privacyPhone') ?: $s('phone'), 'email' => $s('privacyEmail') ?: $s('email')];
+    if (!$u) return ['church' => $church, 'privacy' => $privacy, 'user' => null, 'demoAccount' => demo_account_exists(), 'csrf' => csrf_token()];
     $dec = row('SELECT name FROM ' . t('users') . ' WHERE id = ?', [$u['decided_by'] ?? 0]);
     $u['decided_by_name'] = $dec['name'] ?? null;
-    return ['church' => $church, 'user' => user_payload($u), 'perms' => perms_of($u), 'grades' => grade_defs(), 'csrf' => csrf_token()];
+    return ['church' => $church, 'privacy' => $privacy, 'user' => user_payload($u), 'perms' => perms_of($u), 'grades' => grade_defs(), 'csrf' => csrf_token()];
 }
 
 const DEMO_LOGIN = 'demo';

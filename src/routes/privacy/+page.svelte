@@ -8,6 +8,7 @@
 	const VERSION = '2026년 11월 17일';
 	onMount(() => { void auth.init(); });
 	const church = $derived(auth.churchName || '이 교회');
+	const pv = $derived(auth.privacy);
 </script>
 
 <svelte:head><title>개인정보 처리방침 · {auth.churchName || '교적 관리'}</title><meta name="robots" content="noindex" /></svelte:head>
@@ -192,9 +193,16 @@
 		<section id="s12">
 			<h2>12. 책임자와 문의·신고</h2>
 			<p>
-				개인정보 보호 책임은 <b>{church}의 담임목사(또는 교회가 지정한 교적 담당자)</b>에게 있습니다.
-				개인정보에 관한 문의, 열람·정정·삭제 요청, 불만 처리는 교회 사무실이나 교적 담당 교역자에게 해 주세요.
+				개인정보 보호 책임은 <b>{pv.officer || church + '의 담임목사(또는 교회가 지정한 교적 담당자)'}</b>에게 있습니다.
+				개인정보에 관한 문의, 열람·정정·삭제 요청, 불만 처리는 {pv.phone || pv.email ? '아래로' : '교회 사무실이나 교적 담당 교역자에게'} 해 주세요.
 			</p>
+			{#if pv.officer || pv.phone || pv.email}
+				<ul class="pv-contact">
+					{#if pv.officer}<li>보호책임자: {pv.officer}</li>{/if}
+					{#if pv.phone}<li>전화: {pv.phone}</li>{/if}
+					{#if pv.email}<li>이메일: {pv.email}</li>{/if}
+				</ul>
+			{/if}
 			<p>개인정보 침해에 대한 도움이 필요하면 아래 기관에도 문의할 수 있습니다.</p>
 			<ul>
 				<li>개인정보침해 신고센터 (한국인터넷진흥원): 국번 없이 118 · privacy.kisa.or.kr</li>
@@ -249,6 +257,8 @@
 	th, td { padding: 0.6rem 0.7rem; border: 1px solid #dfe3f1; text-align: left; vertical-align: top; }
 	th { background: #f1f3fb; font-weight: 700; }
 	td small { color: #6a7090; }
+	.pv-contact { list-style: none; padding-left: 0; margin-top: 0.5rem; }
+	.pv-contact li { padding: 0.35rem 0.7rem; margin: 0.25rem 0; background: #f1f3fb; border-radius: 8px; }
 	.pv-note { margin-top: 2.2rem; padding-top: 1rem; border-top: 1px solid #dfe3f1; font-size: 0.85rem; color: #6a7090; }
 	@media (max-width: 640px) { .pv-toc { grid-template-columns: 1fr; } .pv-doc { border-radius: 0; margin-top: 0.6rem; } }
 </style>

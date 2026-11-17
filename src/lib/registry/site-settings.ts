@@ -17,6 +17,9 @@ export interface ChurchInfo {
 	logo: string | null; // 올린 로고 (작게 줄인 그림). 없으면 기본 로고
 	favicon?: string | null; // 올린 탭 아이콘(정사각형으로 줄인 그림). 없으면 기본 아이콘
 	seal: string | null; // 올린 직인. 없으면 이 컴퓨터의 직인 → 견본
+	privacyOfficer: string; // 개인정보 보호책임자 (직책·이름). 개인정보 처리방침 화면에 보임
+	privacyPhone: string; // 개인정보 문의 전화. 비우면 대표 전화
+	privacyEmail: string; // 개인정보 문의 이메일. 비우면 교회 이메일
 	unit1: string; // 1단계 모임 이름: 공동체 · 교구 · 지역 …
 	unit2: string; // 2단계 모임 이름: 소그룹 · 구역 · 목장 · 셀 …
 }
@@ -46,7 +49,7 @@ export interface BackupCfg {
 
 export const DEFAULT_CHURCH: ChurchInfo = {
 	name: '', denomination: '', address: '', phone: '', fax: '', email: '', homepage: '',
-	founded: '', bizNo: '', pastorLabel: '담임목사', pastorName: '', logo: null, seal: null, favicon: null, unit1: '공동체', unit2: '소그룹'
+	founded: '', bizNo: '', pastorLabel: '담임목사', pastorName: '', privacyOfficer: '', privacyPhone: '', privacyEmail: '', logo: null, seal: null, favicon: null, unit1: '공동체', unit2: '소그룹'
 };
 export const DEFAULT_CERT: CertForm = {
 	prefix: '제', format: '{연도}-{번호}', digits: 3, suffix: '호',
