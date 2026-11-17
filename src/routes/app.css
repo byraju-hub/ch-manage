@@ -118,6 +118,8 @@ ul { padding-left: 1.2rem; }
 .dd-menu a.active { background: var(--primary-100); }
 .dd-menu a.active b { color: var(--primary-600); }
 .nav-tools { flex: none; margin-left: auto; display: flex; align-items: center; gap: 0.45rem; }
+.foot-copy .priv-link { margin-top: 0.15rem; font-size: 0.72rem; color: #8b91ad; text-decoration: underline; text-underline-offset: 0.18em; }
+.foot-copy .priv-link:hover { color: var(--primary); }
 .tool-btn {
 	display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.42rem 0.85rem; font-size: 0.84rem; font-weight: 600;
 	color: var(--muted); background: #fff; border: 1px solid var(--line-strong); border-radius: 999px; box-shadow: none;

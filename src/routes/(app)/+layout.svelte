@@ -376,6 +376,7 @@
 			<div class="foot-copy">
 				<span>ⓒ {new Date().getFullYear()} {registry.churchInfo.name}. All Rights Reserved.</span>
 				<small>프로그램 <a href="https://github.com/byraju-hub/ch-manage" target="_blank" rel="noopener">ch-manage</a> · GNU AGPL-3.0</small>
+				<a class="priv-link" href={hrefTo('/privacy')}>개인정보 처리방침</a>
 			</div>
 		</div>
 	</footer>
