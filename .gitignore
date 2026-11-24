@@ -52,3 +52,6 @@ vite.config.ts.timestamp-*
 /tests/env/www/
 /tests/env/mdata/
 /tests/env/*.log
+
+# graphify 결과물 (저장소에 올리지 않음)
+/graphify-out/

@@ -19,6 +19,7 @@ import { defaultSettings, eduDeptFor, inRange, type YearSettings } from './year-
 import { DEFAULT_BACKUP, DEFAULT_CERT, DEFAULT_CHURCH, DEFAULT_CODES, type BackupCfg, type CertForm, type ChurchInfo, type Codes } from './site-settings.ts';
 import { ageCfg } from './age-mode.svelte.ts';
 import { catId, fixCat, type L2Code } from './config.ts';
+import type { ImportRow } from './member-import.ts';
 
 
 // 공동체(1단계) 한 줄: key = 처음 이름(아이콘용), from·to = 기본 출생 연도 기준
@@ -960,6 +961,67 @@ class Registry {
 		this.assignNameNotes(p.name);
 		this.log('수정', p.name);
 		return id;
+	}
+
+	// 엑셀 일괄 등록: 미리 확인을 마친 줄들을 한꺼번에 등록 (교적 카드 + 재적 + 신급 + 직분 + 소그룹 + 세대).
+	// 변경 이력은 사람마다 남기고, 접속 기록과 저장은 한 번만. 등록한 사람 수와 만든 세대 수를 돌려줌
+	importPeople(rows: ImportRow[], opts: { consent: boolean; method: T.ConsentMethod; sameAddressHousehold: boolean }): { added: number; households: number } {
+		if (!this.perms.edit || !rows.length) return { added: 0, households: 0 };
+		const today = todayIso();
+		const made: { id: string; r: ImportRow }[] = [];
+		for (const r of rows) {
+			const id = uid();
+			made.push({ id, r });
+			const same = r.guide_name ? this.d.people.filter((p) => p.name === r.guide_name) : [];
+			this.d.people.push({
+				id, name: r.name, name_note: r.name_note, phone: r.phone, gender: r.gender, birth_date: r.birth_date, email: r.email, has_account: false,
+				birth_lunar: r.birth_lunar, reg_no: null, address_zip: r.address_zip, address1: r.address1, address2: r.address2, occupation: r.occupation,
+				workplace: r.workplace, car_number: r.car_number, marital_status: r.marital_status, wedding_date: r.wedding_date, previous_church: r.previous_church,
+				guide_person_id: same.length === 1 ? same[0].id : null, guide_name: same.length === 1 ? null : r.guide_name, sms_opt_out: false,
+				faith_checked_on: !r.faith_kind && r.faith_checked ? r.reg_date ?? today : null, note: r.note, purged_on: null, photo: null,
+				category_id: r.category_id, clergy_title: r.clergy, edu_dept: r.edu_dept, mission_society: r.mission_society, big_family_head_id: null, big_family_relation: null
+			});
+			// 재적: 등록(또는 전입·복적) 다음에, 재적이 아닌 상태면 그 상태를 이어서 남김 (등록일이 같은 날이면 입력 순서가 뒤인 것이 지금 상태)
+			const kinds: T.StatusKind[] = r.status === '등록' ? ['등록'] : r.status === '전입' || r.status === '복적' ? [r.status] : ['등록', r.status];
+			for (const kind of kinds) this.d.statusEvents.push({ id: uid(), person_id: id, kind, event_date: r.reg_date, reason: '엑셀 일괄 등록', church: null });
+			if (r.faith_kind) this.d.faithEvents.push({ id: uid(), person_id: id, kind: r.faith_kind, event_date: r.faith_date, church: null, officiant: null, note: null });
+			if (r.office) this.d.officeTerms.push({ id: uid(), person_id: id, office: r.office, rank_status: r.office_status, start_date: null, end_date: null, church: null, note: null });
+			if (r.community && r.small_group && this.groupsIn(r.community).some((g) => g.name === r.small_group)) this.d.personGroups.push({ person_id: id, community: r.community, small_group: r.small_group });
+			if (opts.consent) this.d.consents.push({ id: uid(), person_id: id, kind: '교적 등록', policy_version: POLICY_VERSION, consent_date: today, method: opts.method, guardian_name: null, revoked_on: null });
+			this.change(id, '교적 카드', '엑셀 일괄 등록');
+		}
+		// 세대: 세대주가 적힌 사람은 그 세대주의 세대로, 나머지는 새 세대 (같은 주소끼리 묶기를 고른 경우 같은 주소는 한 세대)
+		const headOf = (r: ImportRow): string | null => {
+			if (!r.head_name || r.relation === '본인') return null;
+			const inBatch = made.filter((m) => m.r.name === r.head_name && m.r !== r);
+			if (inBatch.length === 1) return inBatch[0].id;
+			const old = this.d.people.filter((p) => p.name === r.head_name && !made.some((m) => m.id === p.id));
+			return !inBatch.length && old.length === 1 ? old[0].id : null;
+		};
+		const before = this.d.households.length;
+		const byAddr = new Map<string, string>();
+		const key = (a: string | null) => (a ?? '').replace(/\s+/g, '').toLowerCase();
+		const link: { id: string; r: ImportRow; head: string | null }[] = made.map((m) => ({ ...m, head: headOf(m.r) }));
+		const ensureHome = (pid: string) => {
+			const h = this.householdOf(pid);
+			if (h) return h;
+			const p = this.person(pid);
+			const nh = this.createHousehold(p?.address1 ?? null);
+			this.assignToHousehold(pid, nh.id, '본인');
+			return nh;
+		};
+		for (const m of link.filter((x) => !x.head)) {
+			const k = key(m.r.address1);
+			const home = opts.sameAddressHousehold && k ? byAddr.get(k) : undefined;
+			if (home) { this.assignToHousehold(m.id, home, '기타'); continue; }
+			const h = this.createHousehold(m.r.address1);
+			this.assignToHousehold(m.id, h.id, '본인');
+			if (k) byAddr.set(k, h.id);
+		}
+		for (const m of link.filter((x) => x.head)) this.assignToHousehold(m.id, ensureHome(m.head!).id, m.r.relation);
+		for (const name of new Set(rows.map((r) => r.name))) this.assignNameNotes(name);
+		this.log('수정', `엑셀 일괄 등록 ${made.length}명`);
+		return { added: made.length, households: this.d.households.length - before };
 	}
 
 	// ---- 세대 ----

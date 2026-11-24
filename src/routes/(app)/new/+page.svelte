@@ -7,6 +7,7 @@
 	import PersonFields from '#lib/components/PersonFields.svelte';
 	import HeadRelation from '#lib/components/HeadRelation.svelte';
 	import CardScan from '#lib/components/CardScan.svelte';
+	import MemberImport from '#lib/components/MemberImport.svelte';
 	import { categoryPath, formatMobile } from '#lib/registry/derive.ts';
 	import {
 		CONSENT_KINDS, FAITH_KINDS, ORDAINED, POSITIONS, parseRank, rankChoices, rankLabel,
@@ -34,6 +35,7 @@
 	let consents = $state<ConsentKind[]>(['교적 등록']);
 	let method = $state<ConsentMethod>('서면');
 	let ignoreDup = $state(false);
+	let bulkOpen = $state(false); // 엑셀 일괄 등록 창
 
 	const dups = $derived(f.name || f.phone ? registry.findDuplicates(f.name.trim(), f.phone) : []);
 	const blocked = $derived(dups.length > 0 && !ignoreDup);
@@ -122,10 +124,14 @@
 	}
 </script>
 
-<h1>교인 등록</h1>
+<div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap">
+	<h1 style="margin:0">교인 등록</h1>
+	{#if registry.perms.edit}<button type="button" class="ghost" onclick={() => (bulkOpen = !bulkOpen)} aria-expanded={bulkOpen}>{bulkOpen ? '엑셀 일괄 등록 닫기' : '엑셀로 일괄 등록'}</button>{/if}
+</div>
 {#if !registry.perms.edit}
 	<div class="warn">수정 권한이 꺼져 있어 등록할 수 없습니다. (최고관리자에게 수정 권한을 받아야 합니다)</div>
 {:else}
+	{#if bulkOpen}<div class="card" style="margin:.8rem 0"><MemberImport /></div>{/if}
 	{#if registry.features.ai}<CardScan onresult={applyCard} />{/if}
 	<p class="muted"><b class="req">*</b> 표시는 필수 항목입니다. 같은 이름·전화가 있으면 먼저 보여 줍니다.</p>
 	<form class="form card" onsubmit={submit}>
