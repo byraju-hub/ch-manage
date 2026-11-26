@@ -16,7 +16,7 @@ import { isoDate, koreanHolidays, nowStamp, todayIso, type CalItem } from './cal
 import { extractCareEvents, type CareEvent } from './care-events.ts';
 import { MAX_CATEGORY_DEPTH, parseRank } from './types.ts';
 import { defaultSettings, eduDeptFor, inRange, type YearSettings } from './year-settings.ts';
-import { DEFAULT_BACKUP, DEFAULT_CERT, DEFAULT_CHURCH, DEFAULT_CODES, type BackupCfg, type CertForm, type ChurchInfo, type Codes } from './site-settings.ts';
+import { DEFAULT_BACKUP, DEFAULT_CERT, DEFAULT_CHURCH, DEFAULT_CODES, type BackupCfg, type CertForm, type ChurchInfo, type Codes, guessGender } from './site-settings.ts';
 import { ageCfg } from './age-mode.svelte.ts';
 import { catId, fixCat, type L2Code } from './config.ts';
 import type { ImportRow } from './member-import.ts';
@@ -257,8 +257,10 @@ class Registry {
 	get t2(): string { return this.churchInfo.unit2 || '소그룹'; }
 	// 담당 호칭: 모임을 맡은 사람 (전도해 온 분을 뜻하는 '인도자' 칸과는 다름)
 	get tl(): string { return this.churchInfo.leader || '인도자'; }
-	// 화면 글의 '공동체'·'소그룹'을 고른 이름으로 (탭·칸 이름처럼 값으로도 쓰는 글자를 보여 줄 때)
-	tr(s: string): string { return s.replaceAll('공동체', this.t1).replaceAll('소그룹', this.t2); }
+	// 나이·성별 모임 이름 (전도회·선교회)
+	get tm(): string { return this.churchInfo.society || '전도회'; }
+	// 화면 글의 '공동체'·'소그룹'·'전도회'를 고른 이름으로 (탭·칸 이름처럼 값으로도 쓰는 글자를 보여 줄 때)
+	tr(s: string): string { return s.replaceAll('공동체', this.t1).replaceAll('소그룹', this.t2).replaceAll('전도회', this.tm); }
 	// 받침에 맞는 조사: josa('교구', '을') → '를', josa('지역', '을') → '을'
 	josa(word: string, withBatchim: '을' | '이' | '은' | '과' | '으로'): string {
 		const pairs = { 을: '를', 이: '가', 은: '는', 과: '와', 으로: '로' } as const;
@@ -282,6 +284,37 @@ class Registry {
 		if (!this.canSetup) return;
 		for (const [k, v] of Object.entries(part)) (this.d as unknown as Record<string, unknown>)[k] = structuredClone($state.snapshot(v));
 		this.log('설정', what);
+	}
+	societyGender(name: string): 'M' | 'F' | '' { return this.codes.societyGender?.[name] ?? guessGender(name); }
+	// 전도회(선교회) 목록 저장. 이름을 바꾼 모임은 교인 카드와 연간 설정(출생 연도)의 이름도 함께 바꿈. 문제가 있으면 안내 문구를 돌려줌
+	saveSocieties(rows: { orig: string; name: string; gender: 'M' | 'F' | '' }[], extra: Partial<Codes> = {}): string {
+		if (!this.canSetup) return '권한이 없습니다.';
+		const names = rows.map((r) => r.name.trim());
+		if (names.some((n) => !n)) return `${this.tm} 이름이 빈 칸이 있습니다.`;
+		const twice = names.find((n, i) => names.indexOf(n) !== i);
+		if (twice) return `'${twice}' 이름이 두 번 있습니다. 이름은 서로 달라야 합니다.`;
+		const blank = rows.find((r) => !r.gender);
+		if (blank) return `'${blank.name.trim()}'의 구분(남·여)을 골라 주세요.`;
+		const renamed = new Map(rows.filter((r) => r.orig && r.orig !== r.name.trim()).map((r) => [r.orig, r.name.trim()]));
+		const movers = this.d.people.filter((p) => p.mission_society && renamed.has(p.mission_society));
+		if (movers.length && !this.perms.edit) return `교인 ${movers.length}명의 카드도 함께 바꿔야 해서 '수정' 권한이 필요합니다.`;
+		if (renamed.size) {
+			// 한꺼번에 바꿔야 두 모임의 이름을 맞바꿔도 섞이지 않음
+			const swap = <V,>(o: Record<string, V>) => {
+				const out: Record<string, V> = {};
+				for (const [k, v] of Object.entries(o)) if (!renamed.has(k)) out[k] = v;
+				for (const [from, to] of renamed) if (o[from] !== undefined) out[to] = o[from];
+				return out;
+			};
+			const year = new Date().getFullYear();
+			const now = this.settingsFor(year);
+			if (!this.d.yearSettings?.[year] && Object.keys(now.societies).some((k) => renamed.has(k))) this.d.yearSettings = { ...(this.d.yearSettings ?? {}), [year]: structuredClone($state.snapshot(now)) as YearSettings };
+			for (const ys of Object.values(this.d.yearSettings ?? {})) ys.societies = swap(ys.societies);
+			for (const p of movers) p.mission_society = renamed.get(p.mission_society!)!;
+		}
+		const societyGender = Object.fromEntries(rows.map((r) => [r.name.trim(), r.gender as 'M' | 'F']));
+		this.saveSite({ codes: { ...this.codes, ...extra, missionSocieties: names, societyGender } }, renamed.size ? `${this.tm} 이름 바꿈: ${[...renamed].map(([a, b]) => `${a} → ${b}`).join(', ')}`.slice(0, 100) : `코드표 저장 (${this.tm} · 심방 구분)`);
+		return '';
 	}
 	// 지금 담임목사 이름 (기본 설정에 적은 이름이 먼저, 없으면 교적의 담임목사)
 	get pastorName(): string { return this.churchInfo.pastorName || this.d.people.find((p) => p.clergy_title === '담임목사')?.name || ''; }
@@ -748,13 +781,59 @@ class Registry {
 	// 심방 기록. 내용·후속 조치에 '22일 입원, 23일 수술'처럼 날짜가 적힌 일은 캘린더 '성도' 일정으로 자동 등록하고, 등록한 일정을 돌려줌
 	addVisit(v: Omit<T.Visit, 'id'>) {
 		this.d.visits.unshift({ ...v, id: uid() });
-		const name = this.person(v.person_id)?.name ?? '';
-		this.log('심방 기록', name);
-		const found = this.resolveCare(v.person_id, extractCareEvents(`${v.content}\n${v.follow_up ?? ''}`, v.visit_date))
+		this.log('심방 기록', this.person(v.person_id)?.name ?? '');
+		return this.addCareEvents(v);
+	}
+	// 심방 수정: 고친 내용에 맞춰 자동 등록했던 성도 일정도 빼거나 새로 넣고, 새로 넣은 일정을 돌려줌
+	updateVisit(id: string, patch: Omit<T.Visit, 'id'>) {
+		const v = this.d.visits.find((x) => x.id === id);
+		if (!v) return [];
+		const old = this.careEventsFrom(v);
+		Object.assign(v, patch);
+		this.log('심방 수정', `${this.person(v.person_id)?.name ?? ''} ${v.visit_date}`);
+		const next = this.careOf(v);
+		const same = (e: T.ChurchEvent) => next.some((c) => c.person_id === e.person_id && c.date === e.date && c.title === e.title);
+		for (const e of old) if (same(e)) e.note = this.careNote(v);
+		this.dropCareEvents(old.filter((e) => !same(e)), id);
+		return this.addCareEvents(v);
+	}
+	// 심방 삭제: 이 기록에서 자동 등록했던 성도 일정도 함께 지우고, 지운 일정 수를 돌려줌
+	removeVisit(id: string) {
+		const v = this.d.visits.find((x) => x.id === id);
+		if (!v) return 0;
+		const old = this.careEventsFrom(v);
+		this.d.visits = this.d.visits.filter((x) => x.id !== id);
+		this.log('심방 삭제', `${this.person(v.person_id)?.name ?? ''} ${v.visit_date}`);
+		return this.dropCareEvents(old, id);
+	}
+	private careOf(v: Omit<T.Visit, 'id'>) {
+		return this.resolveCare(v.person_id, extractCareEvents(`${v.content}\n${v.follow_up ?? ''}`, v.visit_date));
+	}
+	private careNote(v: Omit<T.Visit, 'id'>) {
+		return `${this.person(v.person_id)?.name ?? ''} 심방 기록에서 자동 등록 (${v.visit_date})`;
+	}
+	// 이 심방 기록에서 자동 등록된 일정. 달력에서 날짜·제목을 손으로 고친 일정은 여기에 들지 않아 그대로 남음
+	careEventsFrom(v: Omit<T.Visit, 'id'>) {
+		const note = this.careNote(v);
+		const list = this.careOf(v);
+		return this.d.events.filter((e) => e.kind === '성도' && e.note === note && list.some((c) => c.person_id === e.person_id && c.date === e.date && c.title === e.title));
+	}
+	private addCareEvents(v: Omit<T.Visit, 'id'>) {
+		const found = this.careOf(v)
 			.filter((c) => !this.d.events.some((e) => e.kind === '성도' && e.person_id === c.person_id && e.date === c.date && e.title === c.title));
-		for (const c of found) this.d.events.push({ id: uid(), kind: '성도', date: c.date, end_date: c.end_date, title: c.title, person_id: c.person_id, note: `${name} 심방 기록에서 자동 등록 (${v.visit_date})` });
+		for (const c of found) this.d.events.push({ id: uid(), kind: '성도', date: c.date, end_date: c.end_date, title: c.title, person_id: c.person_id, note: this.careNote(v) });
 		if (found.length) this.log('일정 등록', `성도 일정 ${found.map((c) => `${c.date.slice(5)} ${c.label}`).join(', ')}`);
 		return found;
+	}
+	// 다른 심방 기록에도 같은 일이 적혀 있으면 일정을 남김
+	private dropCareEvents(list: T.ChurchEvent[], visitId: string) {
+		const others = this.d.visits.filter((x) => x.id !== visitId && list.some((e) => x.visit_date <= e.date));
+		const kept = others.flatMap((x) => this.careOf(x));
+		const gone = new Set(list.filter((e) => !kept.some((c) => c.person_id === e.person_id && c.date === e.date && c.title === e.title)).map((e) => e.id));
+		if (!gone.size) return 0;
+		this.d.events = this.d.events.filter((e) => !gone.has(e.id));
+		this.log('일정 삭제', `심방 기록에서 자동 등록한 성도 일정 ${gone.size}건`);
+		return gone.size;
 	}
 	// 캘린더 일정 (교회 절기 · 사역 일정 · 성례 일정)
 	// events 표에 저장. 수정 권한이 있는 회원만 등록·수정·삭제
@@ -1034,16 +1113,31 @@ class Registry {
 		this.save();
 		return h;
 	}
+	private nextOrder(household_id: string) {
+		return Math.max(0, ...this.membersOfHousehold(household_id).map((m) => m.sort_order)) + 1;
+	}
+	// 세대원이 보이는 순서를 한 칸 위(-1)·아래(1)로. 번호가 겹치거나 비어 있어도 1부터 다시 매김
+	moveMember(member_id: string, dir: -1 | 1) {
+		const m = this.d.householdMembers.find((x) => x.id === member_id);
+		if (!m) return;
+		const list = this.membersOfHousehold(m.household_id);
+		const i = list.findIndex((x) => x.id === member_id);
+		const j = i + dir;
+		if (j < 0 || j >= list.length) return;
+		[list[i], list[j]] = [list[j], list[i]];
+		list.forEach((x, k) => (x.sort_order = k + 1));
+		this.save();
+	}
 	// 한 사람은 한 세대에만 속함: 이미 있으면 옮김
 	assignToHousehold(person_id: string, household_id: string, relation: string) {
 		this.d.householdMembers = this.d.householdMembers.filter((m) => m.person_id !== person_id);
-		const order = this.membersOfHousehold(household_id).length + 1;
+		const order = this.nextOrder(household_id);
 		this.d.householdMembers.push({ id: uid(), household_id, person_id, name: '', birth_year: null, relation, sort_order: order, note: null });
 		this.change(person_id, '세대', `${this.d.households.find((h) => h.id === household_id)?.no} (${relation})`);
 		this.save();
 	}
 	addNonMember(household_id: string, name: string, birth_year: number | null, relation: string) {
-		const order = this.membersOfHousehold(household_id).length + 1;
+		const order = this.nextOrder(household_id);
 		this.d.householdMembers.push({ id: uid(), household_id, person_id: null, name, birth_year, relation, sort_order: order, note: '교인 아님' });
 		this.save();
 	}

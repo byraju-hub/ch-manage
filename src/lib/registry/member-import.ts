@@ -64,7 +64,7 @@ const COLS: [Key, RegExp][] = [
 	['marital_status', /^(결혼여부|혼인여부|결혼|혼인)/],
 	['previous_church', /^(이전|전)(출석)?교회/],
 	['guide_name', /^(인도자|인도)/],
-	['mission_society', /^전도회/],
+	['mission_society', /^(전도회|선교회)/],
 	['faith_date', /^(신급일|세례일|입교일)/],
 	['faith_kind', /^(신급|세례)/],
 	['office', /^(직분|직책)/],

@@ -98,8 +98,11 @@
 	}
 	async function template() {
 		const { default: writeXlsxFile } = await import('write-excel-file/browser');
-		const head = MEMBER_TEMPLATE_HEAD.map((value) => ({ value, fontWeight: 'bold' as const, backgroundColor: '#E0E4F4' }));
-		const data = [head, ...MEMBER_TEMPLATE_ROWS.map((r) => r.map((value) => ({ value })))];
+		const head = MEMBER_TEMPLATE_HEAD.map((h) => ({ value: registry.tr(h), fontWeight: 'bold' as const, backgroundColor: '#E0E4F4' }));
+		// 보기 줄의 모임 이름은 이 교회 목록에 있는 같은 구분의 이름으로
+		const col = MEMBER_TEMPLATE_HEAD.indexOf('전도회');
+		const sample = (r: string[]) => registry.codes.missionSocieties.find((x) => registry.societyGender(x) === (r[col].includes('여') ? 'F' : 'M')) ?? '';
+		const data = [head, ...MEMBER_TEMPLATE_ROWS.map((r) => r.map((value, i) => ({ value: i === col && value ? sample(r) : value })))];
 		await writeXlsxFile(data, { sheet: '교인 명단', columns: MEMBER_TEMPLATE_HEAD.map((h) => ({ width: h === '주소' ? 36 : h === '교인구분' ? 18 : 12 })), stickyRowsCount: 1 }).toFile('교인 일괄 등록 양식.xlsx');
 	}
 	const offLabel = (r: ImportRow) => (r.office ? officeKindTitle({ office: r.office, rank_status: r.office_status }, r.clergy) : '');
@@ -116,7 +119,7 @@
 	</div>
 	<p class="muted" style="font-size:.8rem;margin:.5rem 0 0">
 		첫 줄에 칸 이름이 있어야 합니다. <b>이름</b> 칸은 꼭 필요하고, 나머지는 있는 것만 읽습니다 (칸 순서는 상관없고, '나이'처럼 모르는 칸은 건너뜁니다).<br />
-		읽는 칸: 이름 · 동명이인구분 · 성별 · 생년월일 · 휴대폰 · 주소 · 직분 · 상태 · 교인구분 · 전도회 · 신급 · {registry.t1}(교구) · {registry.t2}(구역) · 등록일 · 차량번호 · 이메일 · 직업 · 직장 · 결혼 여부 · 결혼기념일 · 이전 출석 교회 · 인도자 · 세대주 · 관계 · 비고
+		읽는 칸: 이름 · 동명이인구분 · 성별 · 생년월일 · 휴대폰 · 주소 · 직분 · 상태 · 교인구분 · {registry.tm} · 신급 · {registry.t1}(교구) · {registry.t2}(구역) · 등록일 · 차량번호 · 이메일 · 직업 · 직장 · 결혼 여부 · 결혼기념일 · 이전 출석 교회 · 인도자 · 세대주 · 관계 · 비고
 	</p>
 
 	<div class="opts">

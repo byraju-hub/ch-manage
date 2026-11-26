@@ -10,7 +10,7 @@
 	const tabs = ['교회 조직표', '당회', '시무집사회', '시무권사회', '서리집사', '남전도회', '여전도회'];
 	const YEAR = new Date().getFullYear();
 	let tab = $state('교회 조직표');
-	let pickedSociety = $state('1남전도회');
+	let pickedSociety = $state(''); // 고르지 않았거나 그 탭에 없으면 첫 모임을 보여 줌
 	let pickedOrg = $state('');
 
 	// 직분회: 지금 시무 중인 사람만
@@ -29,8 +29,8 @@
 	const society = $derived(
 		(name: string) => registry.d.people.filter((p) => p.mission_society === name && registry.summary(p).memberCert)
 	);
-	const males = $derived(registry.codes.missionSocieties.filter((s) => s.includes('남')));
-	const females = $derived(registry.codes.missionSocieties.filter((s) => s.includes('여')));
+	const males = $derived(registry.codes.missionSocieties.filter((s) => registry.societyGender(s) === 'M'));
+	const females = $derived(registry.codes.missionSocieties.filter((s) => registry.societyGender(s) === 'F'));
 	const count = (name: string) => society(name).length;
 
 	const units = $derived(registry.d.orgUnits);
@@ -104,9 +104,9 @@
 	});
 	let sheet = $state<HTMLElement>();
 	let busy = $state(false);
-	const fileBase = $derived(`${tab}-${today}`);
+	const fileBase = $derived(`${registry.tr(tab)}-${today}`);
 	function printNow() {
-		registry.log('출력', `조직 · ${tab} 인쇄`);
+		registry.log('출력', `조직 · ${registry.tr(tab)} 인쇄`);
 		window.print();
 	}
 	async function excel() {
@@ -119,8 +119,8 @@
 				heads.map((h) => ({ value: h, fontWeight: 'bold' as const, backgroundColor: '#E9ECEF', ...border })),
 				...sections.flatMap((sec) => sec.rows.map((r) => [{ value: sec.title.replace(/ \((총 )?\d+명\)$/, ''), ...border }, ...r.map((v) => (typeof v === 'number' ? { value: v, type: Number, ...border } : { value: v, ...border }))]))
 			];
-			await writeXlsxFile(data, { sheet: tab, columns: heads.map((h) => ({ width: h === '번호' || h === '나이' ? 6 : h === '비고' ? 22 : 13 })), stickyRowsCount: 1 }).toFile(`${fileBase}.xlsx`);
-			registry.log('내려받기', `조직 · ${tab} 엑셀`);
+			await writeXlsxFile(data, { sheet: registry.tr(tab), columns: heads.map((h) => ({ width: h === '번호' || h === '나이' ? 6 : h === '비고' ? 22 : 13 })), stickyRowsCount: 1 }).toFile(`${fileBase}.xlsx`);
+			registry.log('내려받기', `조직 · ${registry.tr(tab)} 엑셀`);
 		} finally {
 			busy = false;
 		}
@@ -133,7 +133,7 @@
 			const opts = { margin: [20, 18, 20, 18], filename: `${fileBase}.pdf`, image: { type: 'jpeg', quality: 0.96 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.sec-head'] } };
 			const el = sheet;
 			await withPdfStyle(el, () => html2pdf().set(opts as unknown as Record<string, never>).from(el).save());
-			registry.log('출력', `조직 · ${tab} PDF`);
+			registry.log('출력', `조직 · ${registry.tr(tab)} PDF`);
 		} finally {
 			busy = false;
 		}
@@ -141,8 +141,8 @@
 </script>
 
 <div class="no-print">
-<h1>{tab === '서리집사' ? `${YEAR}년 서리집사` : tab}</h1>
-<div class="tabs">{#each tabs as t}<button class:on={tab === t} onclick={() => (tab = t)}>{t}</button>{/each}</div>
+<h1>{tab === '서리집사' ? `${YEAR}년 서리집사` : registry.tr(tab)}</h1>
+<div class="tabs">{#each tabs as t}<button class:on={tab === t} onclick={() => (tab = t)}>{registry.tr(t)}</button>{/each}</div>
 
 {#if tab !== '교회 조직표'}
 	<div class="out-row">
@@ -183,18 +183,19 @@
 	</div>
 {:else if tab === '남전도회' || tab === '여전도회'}
 	{@const names = tab === '남전도회' ? males : females}
+	{@const picked = names.includes(pickedSociety) ? pickedSociety : names[0]}
 	<div class="card">
-		<div class="card-head"><h2>{tab} <span class="tag">{names.length}개</span></h2><span class="sub">교인 카드의 '전도회' 칸으로 모입니다</span></div>
+		<div class="card-head"><h2>{registry.tr(tab)} <span class="tag">{names.length}개</span></h2><span class="sub">교인 카드의 '{registry.tm}' 칸으로 모입니다</span></div>
 		<div class="org-grid">
 			{#each names as n}
-				<button type="button" class="org-card" class:on={pickedSociety === n} onclick={() => (pickedSociety = n)}><b>{n}</b><span>{count(n)}명</span></button>
+				<button type="button" class="org-card" class:on={picked === n} onclick={() => (pickedSociety = n)}><b>{n}</b><span>{count(n)}명</span></button>
 			{/each}
 		</div>
 	</div>
-	{#if names.includes(pickedSociety)}
+	{#if picked}
 		<div class="card" style="padding:0;overflow-x:auto">
-			<table class="sm"><thead><tr><th>{pickedSociety}</th><th>직분</th><th>나이</th><th>{registry.t2}</th><th>휴대폰</th></tr></thead><tbody>
-				{#each society(pickedSociety).map((p) => ({ p, s: registry.summary(p) })).sort((a, b) => a.p.name.localeCompare(b.p.name, 'ko')) as { p, s } (p.id)}
+			<table class="sm"><thead><tr><th>{picked}</th><th>직분</th><th>나이</th><th>{registry.t2}</th><th>휴대폰</th></tr></thead><tbody>
+				{#each society(picked).map((p) => ({ p, s: registry.summary(p) })).sort((a, b) => a.p.name.localeCompare(b.p.name, 'ko')) as { p, s } (p.id)}
 					<tr><td><a href={hrefTo(`/${p.id}`)}>{p.name}</a></td><td>{s.title || '-'}</td><td>{p.birth_date ? new Date().getFullYear() - +p.birth_date.slice(0, 4) : '-'}</td><td>{s.smallGroup || '-'}</td><td>{p.phone ?? '-'}</td></tr>
 				{:else}<tr><td colspan="5" class="muted">회원이 없습니다.</td></tr>{/each}
 			</tbody></table>
@@ -251,7 +252,7 @@
 <!-- 인쇄·PDF용 명단: 화면에는 보이지 않고, 출력·PDF 저장 때만 씀 -->
 <div class="print-wrap">
 	<div class="sheet" bind:this={sheet}>
-		<div class="sh-title"><h1>{tab} 명단</h1><p>{registry.churchInfo.name} · {today} 기준</p></div>
+		<div class="sh-title"><h1>{registry.tr(tab)} 명단</h1><p>{registry.churchInfo.name} · {today} 기준</p></div>
 		{#each sections as sec}
 			<div class="sec-head">{sec.title}</div>
 			<table class="rt">

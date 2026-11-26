@@ -133,15 +133,16 @@
 </div>
 
 <div class="sec">
-	<h3>교인구분 · 전도회</h3>
+	<h3>교인구분 · {registry.tm}</h3>
 	<div class="form">
 		<label>교인구분 (1단계)<select bind:value={l1} onchange={pickL1}><option value="">선택</option>{#each o1 as c}<option value={c.id}>{c.name}</option>{/each}</select></label>
 		<label>2단계<select bind:value={l2} onchange={pickL2} disabled={!o2.length}><option value="">{o2.length ? '선택' : '-'}</option>{#each o2 as c}<option value={c.id}>{c.name}</option>{/each}</select></label>
 		<label>3단계<select bind:value={l3} onchange={sync} disabled={!o3.length}><option value="">{o3.length ? '선택' : '-'}</option>{#each o3 as c}<option value={c.id}>{c.name}</option>{/each}</select></label>
-		<label>전도회<select bind:value={f.mission_society}>
+		<label>{registry.tm}<select bind:value={f.mission_society}>
 			<option value="">해당 없음</option>
-			<optgroup label="남전도회">{#each registry.codes.missionSocieties.filter((s) => s.includes('남')) as s}<option>{s}</option>{/each}</optgroup>
-			<optgroup label="여전도회">{#each registry.codes.missionSocieties.filter((s) => s.includes('여')) as s}<option>{s}</option>{/each}</optgroup>
+			{#if f.mission_society && !registry.codes.missionSocieties.includes(f.mission_society)}<option>{f.mission_society}</option>{/if}
+			<optgroup label="남{registry.tm}">{#each registry.codes.missionSocieties.filter((s) => registry.societyGender(s) === 'M') as s}<option>{s}</option>{/each}</optgroup>
+			<optgroup label="여{registry.tm}">{#each registry.codes.missionSocieties.filter((s) => registry.societyGender(s) === 'F') as s}<option>{s}</option>{/each}</optgroup>
 		</select></label>
 	</div>
 </div>

@@ -26,7 +26,7 @@
 		// 전도회·교육부서는 한 해 지나면 출생 연도를 한 해씩 뒤로 (같은 나이대 유지)
 		for (const r of Object.values(prev.societies)) { if (r.from > 1900) r.from++; if (r.to < 2100) r.to++; }
 		s = withSocieties({ ...prev, year, promoteDate: `${year}${prev.promoteDate.slice(4)}` });
-		msg = `${year - 1}년 설정을 가져왔습니다. 전도회 출생 연도는 한 해씩 옮겼습니다. 확인 후 저장해 주세요.`;
+		msg = `${year - 1}년 설정을 가져왔습니다. ${registry.tm} 출생 연도는 한 해씩 옮겼습니다. 확인 후 저장해 주세요.`;
 	}
 	const canEdit = $derived(registry.isSuper || registry.perms.admin);
 	function save() { registry.saveYearSettings(s); msg = `${year}년 연간 설정을 저장했습니다.`; }
@@ -48,8 +48,8 @@
 	}
 	const sample = '1990-05-01';
 	const exAge = (mode: string) => { const y = 1990, now = new Date(); if (mode === '연 나이') return now.getFullYear() - y; if (mode === '한국 나이') return now.getFullYear() - y + 1; return now.getFullYear() - y - (now < new Date(now.getFullYear(), 4, 1) ? 1 : 0); };
-	const males = $derived(registry.codes.missionSocieties.filter((k) => k.includes('남') && s.societies[k]));
-	const females = $derived(registry.codes.missionSocieties.filter((k) => k.includes('여') && s.societies[k]));
+	const males = $derived(registry.codes.missionSocieties.filter((k) => registry.societyGender(k) === 'M' && s.societies[k]));
+	const females = $derived(registry.codes.missionSocieties.filter((k) => registry.societyGender(k) === 'F' && s.societies[k]));
 </script>
 
 <div class="card ys-top">
@@ -117,11 +117,11 @@
 </section>
 
 <section class="card">
-	<div class="card-head"><h2>전도회별 출생 연도</h2><span class="sub">남전도회 {males.length}개 · 여전도회 {females.length}개</span></div>
+	<div class="card-head"><h2>{registry.tm}별 출생 연도</h2><span class="sub">남{registry.tm} {males.length}개 · 여{registry.tm} {females.length}개</span></div>
 	<div class="soc-grid">
 		{#each [males, females] as list}
 			<div class="tw"><table class="sm ys-t">
-				<thead><tr><th>전도회</th><th>부터</th><th>까지</th><th>표시</th></tr></thead>
+				<thead><tr><th>{registry.tm}</th><th>부터</th><th>까지</th><th>표시</th></tr></thead>
 				<tbody>
 					{#each list as k}
 						{@const r = s.societies[k]}
@@ -134,7 +134,7 @@
 			</table></div>
 		{/each}
 	</div>
-	<p class="chk-line">{#if socMis.length}<button type="button" class="linkish" onclick={() => (showSoc = !showSoc)}>기준과 맞지 않는 전도회 소속 {socMis.length}명 {showSoc ? '접기' : '보기'}</button>{:else}<span class="muted">모든 전도회 소속이 기준에 맞습니다.</span>{/if}</p>
+	<p class="chk-line">{#if socMis.length}<button type="button" class="linkish" onclick={() => (showSoc = !showSoc)}>기준과 맞지 않는 {registry.tm} 소속 {socMis.length}명 {showSoc ? '접기' : '보기'}</button>{:else}<span class="muted">모든 {registry.tm} 소속이 기준에 맞습니다.</span>{/if}</p>
 	{#if showSoc && socMis.length}<p class="mis">{#each socMis as p, i}{i ? ', ' : ''}<a href={hrefTo(`/${p.id}`)}>{p.name}</a> <small class="muted">({p.birth_date?.slice(0, 4)} · {p.mission_society})</small>{/each}</p>{/if}
 </section>
 

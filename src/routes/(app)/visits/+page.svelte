@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { todayIso } from '#lib/registry/calendar.ts';
 	import { hrefTo } from '#lib/registry/paths.ts';
-	// 심방: 심방 목록 · 캘린더 보기 · 소그룹 특이사항 · 등록 (심방 권한이 있는 회원만)
+	// 심방: 심방 목록(수정·삭제) · 캘린더 보기 · 소그룹 특이사항 · 등록 (심방 권한이 있는 회원만)
 	import { page } from '$app/state';
 	import { registry } from '#lib/registry/store.svelte.ts';
 	import Calendar from '#lib/components/Calendar.svelte';
@@ -11,7 +11,7 @@
 	import CarePreview from '#lib/components/CarePreview.svelte';
 	import Pagination from '#lib/components/Pagination.svelte';
 	import { officeKindTitle } from '#lib/registry/derive.ts';
-	import { FULL_TIME_CLERGY, type VisitMethod } from '#lib/registry/types.ts';
+	import { FULL_TIME_CLERGY, type Visit, type VisitMethod } from '#lib/registry/types.ts';
 
 	const today = todayIso();
 	let tab = $state<'list' | 'cal' | 'notes' | 'new'>('cal');
@@ -44,20 +44,46 @@
 	const pages = $derived(Math.max(1, Math.ceil(rows.length / PER)));
 	$effect(() => { void q; void kind; void pastor; void from; void to; vpage = 1; });
 
-	// 등록 폼
-	let f = $state({ person: page.url.searchParams.get('person') ?? '', date: page.url.searchParams.get('date') ?? today, kind: page.url.searchParams.get('kind') ?? '일반', method: '대면' as VisitMethod, pastor: '', scripture: '', hymn: '', content: '', follow: '' });
+	// 등록 폼 (수정할 때도 같은 폼을 씀)
+	const blank = () => ({ person: '', date: today, kind: '일반', method: '대면' as VisitMethod, pastor: '', scripture: '', hymn: '', content: '', follow: '' });
+	let f = $state({ ...blank(), person: page.url.searchParams.get('person') ?? '', date: page.url.searchParams.get('date') ?? today, kind: page.url.searchParams.get('kind') ?? '일반' });
+	let editId = $state(''); // 비어 있으면 새 등록
+	const canEdit = $derived(registry.perms.visit && registry.perms.edit);
 	let companions = $state<Chip[]>([]);
 	const nn = (x: string) => (x.trim() === '' ? null : x.trim());
 	// 등록 후 안내: 심방 내용에서 자동으로 넣은 성도 일정
 	let savedMsg = $state('');
+	function clearForm() { f = blank(); companions = []; editId = ''; }
+	function startNew() {
+		if (editId) clearForm();
+		tab = 'new';
+	}
+	const chipOf = (n: string) => { const m = registry.d.people.filter((p) => p.name === n); return { id: m.length === 1 ? m[0].id : null, name: n }; };
+	function startEdit(v: Visit) {
+		editId = v.id;
+		f = { person: v.person_id, date: v.visit_date, kind: v.kind, method: v.method, pastor: v.pastor, scripture: v.scripture ?? '', hymn: v.hymn ?? '', content: v.content, follow: v.follow_up ?? '' };
+		companions = (v.companions ?? '').split(',').map((x) => x.trim()).filter(Boolean).map(chipOf);
+		savedMsg = '';
+		tab = 'new';
+		window.scrollTo({ top: 0 });
+	}
+	function cancel() { if (editId) clearForm(); tab = 'list'; }
+	function remove(v: Visit) {
+		const n = registry.careEventsFrom(v).length;
+		if (!confirm(`${nameOf(v.person_id)} 님의 ${v.visit_date} 심방 기록을 삭제합니다.${n ? `\n이 기록에서 자동 등록한 성도 일정 ${n}건도 함께 지워질 수 있습니다.` : ''}\n되돌릴 수 없습니다. 계속할까요?`)) return;
+		const gone = registry.removeVisit(v.id);
+		savedMsg = `${nameOf(v.person_id)} 심방 기록을 삭제했습니다.` + (gone ? ` 성도 일정 ${gone}건도 지웠습니다.` : '');
+		if (vpage > pages) vpage = pages;
+	}
 	function submit(e: SubmitEvent) {
 		e.preventDefault();
 		if (!f.person) return;
 		const name = nameOf(f.person);
-		const added = registry.addVisit({ person_id: f.person, visit_date: f.date, kind: f.kind, method: f.method, pastor: f.pastor || clergy[0]?.name || '담당 교역자', companions: companions.length ? companions.map((c) => c.name).join(', ') : null, scripture: nn(f.scripture), hymn: nn(f.hymn), content: f.content, follow_up: nn(f.follow) });
+		const data = { person_id: f.person, visit_date: f.date, kind: f.kind, method: f.method, pastor: f.pastor || clergy[0]?.name || '담당 교역자', companions: companions.length ? companions.map((c) => c.name).join(', ') : null, scripture: nn(f.scripture), hymn: nn(f.hymn), content: f.content, follow_up: nn(f.follow) };
+		const added = editId ? registry.updateVisit(editId, data) : registry.addVisit(data);
 		const md = (iso: string) => `${+iso.slice(5, 7)}/${+iso.slice(8, 10)}`;
-		savedMsg = `${name} 심방을 등록했습니다.` + (added.length ? ` 캘린더 성도 일정에 ${added.map((c) => `${md(c.date)}${c.end_date ? `~${md(c.end_date)}` : ''} ${c.label}`).join(', ')}을(를) 함께 넣었습니다.` : '');
-		f.person = ''; f.content = ''; f.follow = ''; f.scripture = ''; f.hymn = ''; companions = [];
+		savedMsg = `${name} 심방을 ${editId ? '수정' : '등록'}했습니다.` + (added.length ? ` 캘린더 성도 일정에 ${added.map((c) => `${md(c.date)}${c.end_date ? `~${md(c.end_date)}` : ''} ${c.label}`).join(', ')}을(를) 함께 넣었습니다.` : '');
+		clearForm();
 		tab = 'list';
 	}
 	$effect(() => { if (page.url.searchParams.get('person')) tab = 'new'; });
@@ -94,13 +120,13 @@
 		if (r.scripture) f.scripture = r.scripture;
 		if (r.hymn) f.hymn = r.hymn;
 		if (r.follow_up) f.follow = r.follow_up;
-		if (r.companions?.length) companions = r.companions.map((n) => { const m = registry.d.people.filter((p) => p.name === n); return { id: m.length === 1 ? m[0].id : null, name: n }; });
+		if (r.companions?.length) companions = r.companions.map(chipOf);
 	}
 </script>
 
 <div class="row page-head" style="justify-content:space-between">
 	<h1>심방</h1>
-	{#if registry.perms.visit && registry.perms.edit}<button type="button" onclick={() => (tab = 'new')}>+ 심방 등록</button>{/if}
+	{#if registry.perms.visit && registry.perms.edit}<button type="button" onclick={startNew}>+ 심방 등록</button>{/if}
 </div>
 {#if !registry.perms.visit}
 	<div class="warn">심방 메뉴는 A 등급(전임 교역자)만 볼 수 있습니다.</div>
@@ -124,7 +150,7 @@
 		<p class="muted" style="margin:0 0 .5rem;scroll-margin-top:110px" bind:this={listTop}>모두 {rows.length.toLocaleString()}건{#if pages > 1} · {vpage} / {pages}쪽{/if}</p>
 		<div class="card" style="padding:0;overflow-x:auto">
 			<table class="sm vlist">
-				<thead><tr><th>날짜</th><th>구분</th><th>교인</th><th>직분</th><th>담당</th><th>내용</th><th>후속 조치</th></tr></thead>
+				<thead><tr><th>날짜</th><th>구분</th><th>교인</th><th>직분</th><th>담당</th><th>내용</th><th>후속 조치</th>{#if canEdit}<th>관리</th>{/if}</tr></thead>
 				<tbody>
 					{#each rows.slice((vpage - 1) * PER, vpage * PER) as v (v.id)}
 						<tr>
@@ -135,8 +161,14 @@
 							<td class="nw">{v.pastor}{#if v.companions}<small class="muted">동행 {v.companions}</small>{/if}</td>
 							<td class="vc" style="min-width:220px">{v.content}{v.scripture ? ` · ${v.scripture}` : ''}{v.hymn ? ` · ${v.hymn}` : ''}</td>
 							<td>{v.follow_up ?? '-'}</td>
+							{#if canEdit}
+								<td class="nw">
+									<button type="button" class="ghost xs" onclick={() => startEdit(v)} aria-label="{nameOf(v.person_id)} {v.visit_date} 심방 수정">수정</button>
+									<button type="button" class="ghost xs" onclick={() => remove(v)} aria-label="{nameOf(v.person_id)} {v.visit_date} 심방 삭제">삭제</button>
+								</td>
+							{/if}
 						</tr>
-					{:else}<tr><td colspan="7" class="muted">조건에 맞는 심방이 없습니다.</td></tr>{/each}
+					{:else}<tr><td colspan={canEdit ? 8 : 7} class="muted">조건에 맞는 심방이 없습니다.</td></tr>{/each}
 				</tbody>
 			</table>
 		</div>
@@ -175,19 +207,19 @@
 		<Pagination bind:page={npage} pages={npages} onchange={() => noteTop?.scrollIntoView({ block: 'start', behavior: 'smooth' })} />
 	{:else}
 		<form class="card form" onsubmit={submit}>
-			<h2 class="wide">심방 등록</h2>
+			<h2 class="wide">심방 {editId ? '수정' : '등록'}</h2>
 			<label class="wide">교인 *<PersonPicker bind:value={f.person} placeholder="심방받을 교인 이름·전화 검색" /></label>
 			<label>날짜 *<input type="date" required bind:value={f.date} /></label>
-						<label>구분<select bind:value={f.kind}>{#each registry.codes.visitKinds as k}<option>{k}</option>{/each}</select></label>
+						<label>구분<select bind:value={f.kind}>{#if !registry.codes.visitKinds.includes(f.kind)}<option>{f.kind}</option>{/if}{#each registry.codes.visitKinds as k}<option>{k}</option>{/each}</select></label>
 			<label>방법<select bind:value={f.method}><option>대면</option><option>전화</option></select></label>
-			<label>담당 교역자<select bind:value={f.pastor}><option value="">(선택)</option>{#each clergy as c}<option>{c.name}</option>{/each}</select></label>
+			<label>담당 교역자<select bind:value={f.pastor}><option value="">(선택)</option>{#if f.pastor && !clergy.some((c) => c.name === f.pastor)}<option>{f.pastor}</option>{/if}{#each clergy as c}<option>{c.name}</option>{/each}</select></label>
 			<label class="wide">동행자 <span class="muted" style="font-weight:400">(이름을 쓰고 쉼표 · 같은 이름이 여러 명이면 목록에서 선택)</span><NameChips bind:chips={companions} allowFree placeholder="예: 김영수, 이순희" /></label>
 			{#if registry.features.ai}<div class="wide"><VisitAnalyzer onresult={applyAnalysis} /></div>{/if}
 			<label>말씀<input bind:value={f.scripture} placeholder="시편 23편" /></label>
 			<label>찬송<input bind:value={f.hymn} placeholder="찬 305장" /></label>
 			<label class="wide"><span class="lt">심방 내용 <small class="hint">(예: 22일 입원, 23일 수술 과 같이 날짜와 함께 기록하면 캘린더의 성도 일정에 자동으로 입력이 됩니다.)</small></span><small class="hint">*자동 등록 해당 문구 : 입원 · 퇴원 · 수술 · 시술 · 검사 · 항암 · 치료 · 출산 · 돌잔치 · 결혼식 · 장례 · 입관 · 발인 · 이사 · 개업 · 입대 · 전역 · 제대 · 입학 · 졸업 · 출국 · 귀국 등</small><textarea rows="5" bind:value={f.content} required></textarea></label>
 			<label class="wide">후속 조치<input bind:value={f.follow} /><CarePreview text={`${f.content}\n${f.follow}`} base={f.date} person={f.person} /></label>
-			<div class="wide row"><button type="submit" disabled={!f.person}>등록</button><button type="button" class="ghost" onclick={() => (tab = 'list')}>취소</button></div>
+			<div class="wide row"><button type="submit" disabled={!f.person}>{editId ? '수정 저장' : '등록'}</button><button type="button" class="ghost" onclick={cancel}>취소</button></div>
 		</form>
 	{/if}
 {/if}

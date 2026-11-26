@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { hrefTo } from '#lib/registry/paths.ts';
-	// 세대 상세: 세대원 추가 · 관계 바꾸기 · 분가
+	// 세대 상세: 세대원 추가 · 관계 바꾸기 · 보이는 순서 바꾸기 · 분가
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { registry } from '#lib/registry/store.svelte.ts';
@@ -35,13 +35,19 @@
 	</div>
 	<div class="card">
 		<p class="muted">{h.zip ?? ''} {h.address ?? '주소 없음'} {h.home_phone ? `· 집전화 ${h.home_phone}` : ''}</p>
-		<p class="muted">세대마다 '본인'(세대주)은 한 명이고, 다른 세대원의 관계는 세대주 기준입니다. 한 사람은 한 세대에만 속합니다.</p>
+		<p class="muted">세대마다 '본인'(세대주)은 한 명이고, 다른 세대원의 관계는 세대주 기준입니다. 한 사람은 한 세대에만 속합니다.{#if can} 화살표로 올리고 내린 순서가 교적 카드의 가족 목록에도 그대로 보입니다.{/if}</p>
 		<table class="sm">
-			<thead><tr><th></th><th>이름</th><th>관계</th><th>구분</th></tr></thead>
+			<thead><tr><th></th>{#if can}<th>순서</th>{/if}<th>이름</th><th>관계</th><th>구분</th></tr></thead>
 			<tbody>
-				{#each members as m (m.id)}
+				{#each members as m, i (m.id)}
 					<tr>
 						<td>{#if can}<input type="checkbox" style="width:auto" value={m.id} bind:group={checked} />{/if}</td>
+						{#if can}
+							<td class="order">
+								<button type="button" class="ghost sm" onclick={() => registry.moveMember(m.id, -1)} disabled={i === 0} aria-label="{nameOf(m)} 위로" title="위로">↑</button>
+								<button type="button" class="ghost sm" onclick={() => registry.moveMember(m.id, 1)} disabled={i === members.length - 1} aria-label="{nameOf(m)} 아래로" title="아래로">↓</button>
+							</td>
+						{/if}
 						<td>{#if m.person_id}<a href={hrefTo(`/${m.person_id}`)}>{nameOf(m)}</a>{:else}{m.name}{m.birth_year ? ` (${m.birth_year}년생)` : ''}{/if}</td>
 						<td>
 							{#if can}
@@ -82,5 +88,7 @@
 {/if}
 
 <style>
+	.order { white-space: nowrap; }
+	.order button { min-width: 2.2rem; }
 	.find { flex: 0 1 20rem; min-width: 14rem; }
 </style>

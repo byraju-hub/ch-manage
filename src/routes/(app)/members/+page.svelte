@@ -189,7 +189,7 @@
 		<select bind:value={c1} onchange={() => { c2 = ''; c3 = ''; }}><option value="">교인구분 전체</option>{#each l1opts as o}<option>{o.name}</option>{/each}</select>
 		<select bind:value={c2}><option value="">2단계 전체</option>{#each l2opts as o}<option>{o}</option>{/each}</select>
 		<select bind:value={c3}><option value="">3단계 전체</option>{#each l3opts as o}<option>{o}</option>{/each}</select>
-		<select bind:value={society}><option value="">전도회 전체</option>{#each registry.codes.missionSocieties as o}<option>{o}</option>{/each}</select>
+		<select bind:value={society}><option value="">{registry.tm} 전체</option>{#each registry.codes.missionSocieties as o}<option>{o}</option>{/each}</select>
 	</div>
 	<div class="toolbar">
 		<select bind:value={status}><option value="">재적상태 전체</option>{#each ['재적', '보류', '보관', '전출', '별세', '제적', '미등록'] as v}<option>{v}</option>{/each}</select>
@@ -256,7 +256,7 @@
 				<dt>집전화</dt><dd>{hh?.home_phone ?? '-'}</dd>
 				<dt>주소</dt><dd>{[p.address1, p.address2].filter(Boolean).join(' ') || hh?.address || '-'}</dd>
 				<dt>{registry.t2}</dt><dd>{s.community ? `${s.community} › ${s.smallGroup}` : '-'}</dd>
-				<dt>전도회</dt><dd>{p.mission_society ?? '-'}</dd>
+				<dt>{registry.tm}</dt><dd>{p.mission_society ?? '-'}</dd>
 				<dt>직분</dt><dd>{s.office ? officeWithKind(s.office, p.clergy_title) : '성도'}</dd>
 				<dt>신급</dt><dd>{s.faith}</dd>
 				<dt>등록일</dt><dd>{s.registered ?? '미상'}{p.reg_no ? ` · 교번 ${p.reg_no}` : ''}</dd>

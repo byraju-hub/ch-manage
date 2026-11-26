@@ -312,7 +312,7 @@
 						<tr><th>직업 / 직장</th><td>{[p.occupation, p.workplace].filter(Boolean).join(' / ')}</td><th>결혼</th><td>{v(p.marital_status)}{p.wedding_date ? ` · ${ymd(p.wedding_date)}` : ''}</td></tr>
 						<tr><th colspan="2">교인구분</th><td>{s.category}</td><th>직분</th><td>{s.title || '성도'}</td></tr>
 						<tr><th colspan="2">등록일</th><td>{ymd(s.registered)}</td><th>신급</th><td>{s.faith}</td></tr>
-						<tr><th colspan="2">{registry.t1} · {registry.t2}</th><td>{s.community ? `${s.community} · ${s.smallGroup}` : ''}</td><th>전도회</th><td>{v(p.mission_society)}</td></tr>
+						<tr><th colspan="2">{registry.t1} · {registry.t2}</th><td>{s.community ? `${s.community} · ${s.smallGroup}` : ''}</td><th>{registry.tm}</th><td>{v(p.mission_society)}</td></tr>
 						<tr><th colspan="2">이전 교회</th><td>{v(p.previous_church)}</td><th>인도자</th><td>{p.guide_person_id ? registry.person(p.guide_person_id)?.name : v(p.guide_name)}</td></tr>
 					</tbody>
 				</table>

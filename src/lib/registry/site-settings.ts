@@ -23,6 +23,7 @@ export interface ChurchInfo {
 	unit1: string; // 1단계 모임 이름: 공동체 · 교구 · 지역 …
 	unit2: string; // 2단계 모임 이름: 소그룹 · 구역 · 목장 · 셀 …
 	leader: string; // 담당 호칭(모임을 맡은 사람): 인도자 · 구역장 · 리더 …
+	society: string; // 나이·성별 모임 이름: 전도회 · 선교회
 }
 export interface CertForm {
 	prefix: string; // 제
@@ -38,6 +39,7 @@ export interface CertForm {
 export interface Codes {
 	visitKinds: string[];
 	missionSocieties: string[];
+	societyGender?: Record<string, 'M' | 'F'>; // 모임마다 남·여 (없으면 이름의 '남'·'여'로 판단)
 }
 export interface BackupCfg {
 	auto: boolean;
@@ -50,7 +52,7 @@ export interface BackupCfg {
 
 export const DEFAULT_CHURCH: ChurchInfo = {
 	name: '', denomination: '', address: '', phone: '', fax: '', email: '', homepage: '',
-	founded: '', bizNo: '', pastorLabel: '담임목사', pastorName: '', privacyOfficer: '', privacyPhone: '', privacyEmail: '', logo: null, seal: null, favicon: null, unit1: '공동체', unit2: '소그룹', leader: '인도자'
+	founded: '', bizNo: '', pastorLabel: '담임목사', pastorName: '', privacyOfficer: '', privacyPhone: '', privacyEmail: '', logo: null, seal: null, favicon: null, unit1: '공동체', unit2: '소그룹', leader: '인도자', society: '전도회'
 };
 export const DEFAULT_CERT: CertForm = {
 	prefix: '제', format: '{연도}-{번호}', digits: 3, suffix: '호',
@@ -112,3 +114,11 @@ export function squareIcon(file: File, size = 128): Promise<string> {
 export const UNIT1_OPTIONS = ['공동체', '교구', '지역', '선교회'];
 export const UNIT2_OPTIONS = ['소그룹', '구역', '목장', '셀', '다락방'];
 export const LEADER_OPTIONS = ['인도자', '구역장', '리더', '섬김이', '지키미', '셀장', '진장'];
+export const SOCIETY_OPTIONS = ['전도회', '선교회'];
+
+// 이름만 보고 남·여를 짐작: '여호수아 남선교회'처럼 두 글자가 다 있으면 모임 이름 바로 앞 글자를 따름
+export function guessGender(name: string): 'M' | 'F' | '' {
+	const m = name.match(/(남|여)\s*(전도회|선교회)/);
+	const g = m ? m[1] : name.includes('여') ? '여' : name.includes('남') ? '남' : '';
+	return g === '남' ? 'M' : g === '여' ? 'F' : '';
+}

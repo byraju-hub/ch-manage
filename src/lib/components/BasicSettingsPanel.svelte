@@ -2,7 +2,7 @@
 	import { hrefTo } from '#lib/registry/paths.ts';
 	// 관리자 › 교회 설정 › 기본 설정: 교회 기본 정보 · 로고 · 직인 · 증명서 양식
 	import { registry } from '#lib/registry/store.svelte.ts';
-	import { LEADER_OPTIONS, UNIT1_OPTIONS, UNIT2_OPTIONS, certNo, shrinkImage, squareIcon, type CertForm, type ChurchInfo } from '#lib/registry/site-settings.ts';
+	import { LEADER_OPTIONS, SOCIETY_OPTIONS, UNIT1_OPTIONS, UNIT2_OPTIONS, certNo, shrinkImage, squareIcon, type CertForm, type ChurchInfo } from '#lib/registry/site-settings.ts';
 
 	let info = $state<ChurchInfo>(structuredClone($state.snapshot(registry.churchInfo)) as ChurchInfo);
 	let cert = $state<CertForm>(structuredClone($state.snapshot(registry.certForm)) as CertForm);
@@ -24,8 +24,19 @@
 		if (!info.name.trim()) { err = '교회 이름을 적어 주세요.'; return; }
 		if (!info.unit1.trim() || !info.unit2.trim()) { err = '모임 이름(1단계 · 2단계)을 적어 주세요.'; return; }
 		err = '';
+		const before = registry.tm;
 		registry.saveSite({ churchInfo: payload() }, '기본 설정 · 교회 정보 저장');
 		msg = '교회 정보를 저장했습니다. 화면 위쪽 이름과 문서에 바로 반영됩니다.';
+		if (before !== info.society) renameSocieties(before, info.society);
+	}
+	// '전도회' ↔ '선교회'를 바꾸면, 모임 이름 속의 글자도 바꿀지 물어봄
+	function renameSocieties(from: string, to: string) {
+		const list = registry.codes.missionSocieties;
+		const n = list.filter((x) => x.includes(from)).length;
+		if (!n || !confirm(`모임 이름 ${n}개에 들어 있는 '${from}'도 '${to}'로 바꿀까요?\n예) ${list.find((x) => x.includes(from))} → ${list.find((x) => x.includes(from))!.replaceAll(from, to)}\n교인 카드와 연간 설정의 이름도 함께 바뀝니다.`)) return;
+		const why = registry.saveSocieties(list.map((x) => ({ orig: x, name: x.replaceAll(from, to), gender: registry.societyGender(x) })));
+		if (why) err = `모임 이름은 바꾸지 못했습니다. ${why}`;
+		else msg = `교회 정보를 저장하고 모임 이름 ${n}개를 바꿨습니다.`;
 	}
 	function saveCert() {
 		cert.purposes = purposeText.split(/[,\n]/).map((x) => x.trim()).filter(Boolean);
@@ -130,10 +141,13 @@
 				{#if !UNIT2_OPTIONS.includes(info.unit2)}<input bind:value={info.unit2} placeholder="예: 가정교회" style="width:8rem" />{/if}
 			</span>
 		</label>
+		<label>남·여 모임
+			<select bind:value={info.society}>{#each SOCIETY_OPTIONS as o}<option>{o}</option>{/each}</select>
+		</label>
 		<label>담당
 			<select bind:value={info.leader}>{#each LEADER_OPTIONS as o}<option>{o}</option>{/each}</select>
 		</label>
-		<span class="muted" style="font-size:.8rem">예) {info.unit1 || '1단계'} 편성표 · {info.unit2 || '2단계'}별 명단 · {info.unit2 || '2단계'} {info.leader} — 메뉴와 모든 화면에 적용됩니다.</span>
+		<span class="muted" style="font-size:.8rem">예) {info.unit1 || '1단계'} 편성표 · {info.unit2 || '2단계'}별 명단 · {info.unit2 || '2단계'} {info.leader} · 남{info.society} — 메뉴와 모든 화면에 적용됩니다.</span>
 	</div>
 	<div class="row" style="justify-content:flex-end;margin-top:.8rem"><button type="button" onclick={saveInfo} disabled={!can}>교회 정보 저장</button></div>
 </section>
