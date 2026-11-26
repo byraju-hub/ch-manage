@@ -234,7 +234,7 @@
 			<span>{md(latest.date)} 주일 출석 · {rate}%</span>
 		</div>
 	</a>
-	<a class="kpi" href={hrefTo(`/stats?tab=${registry.t2} 출석`)} title="주일 오후 {registry.t2} 모임 출석 (인도자가 등록)">
+	<a class="kpi" href={hrefTo(`/stats?tab=${registry.t2} 출석`)} title="주일 오후 {registry.t2} 모임 출석 ({registry.tl}{registry.josa(registry.tl, '이')} 등록)">
 		<span class="ico blue2">{@render icon('group')}</span>
 		<div><b>{groupAtt.present}<small class="of">/{groupAtt.total}</small></b><span>{md(latest.date)} {registry.t2} 출석 · {pctOf(groupAtt)}%</span></div>
 	</a>
@@ -352,7 +352,7 @@
 	<section class="card">
 		<div class="card-head"><h2>{@render hIcon('group')}{registry.t1} · {registry.t2} 출석 <small class="muted" style="font-weight:500;font-size:.78rem">주일 오후 {registry.t2} 모임</small></h2>
 			<div class="seg"><button type="button" class:on={unit === 'community'} onclick={() => (unit = 'community')}>{registry.t1}</button><button type="button" class:on={unit === 'group'} onclick={() => (unit = 'group')}>{registry.t2}</button></div></div>
-		<p class="sub" style="margin:-.4rem 0 .6rem;color:var(--muted);font-size:.8rem">{md(latest.date)} 주일 · 인도자 등록 기준{unit === 'group' ? ' · 출석률 높은 순' : ''}</p>
+		<p class="sub" style="margin:-.4rem 0 .6rem;color:var(--muted);font-size:.8rem">{md(latest.date)} 주일 · {registry.tl} 등록 기준{unit === 'group' ? ' · 출석률 높은 순' : ''}</p>
 		<div style="max-height:{unit === 'group' ? '420px' : 'none'};overflow:auto">
 		{#each byCommunity as [name, c]}
 			<div class="li" style="flex-direction:column; align-items:stretch; gap:.4rem">

@@ -30,7 +30,7 @@ function default_church_info(string $name, string $unit1, string $unit2): array
     return [
         'name' => $name, 'denomination' => '', 'address' => '', 'phone' => '', 'fax' => '', 'email' => '', 'homepage' => '',
         'founded' => '', 'bizNo' => '', 'pastorLabel' => '담임목사', 'pastorName' => '', 'logo' => null, 'seal' => null,
-        'unit1' => $unit1, 'unit2' => $unit2,
+        'unit1' => $unit1, 'unit2' => $unit2, 'leader' => '인도자',
     ];
 }
 

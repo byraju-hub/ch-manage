@@ -4,8 +4,8 @@
 	import { RELATIONS } from '#lib/registry/types.ts';
 
 	let {
-		label = '신앙세대주 / 관계', required = false, headId = $bindable(''), relation = $bindable('본인'), withSelf = true, note = '', onfetch
-	}: { label?: string; required?: boolean; headId?: string; relation?: string; withSelf?: boolean; note?: string; onfetch?: (id: string) => void } = $props();
+		label = '신앙세대주 / 관계', headId = $bindable(''), relation = $bindable('본인'), withSelf = true, note = '', onfetch
+	}: { label?: string; headId?: string; relation?: string; withSelf?: boolean; note?: string; onfetch?: (id: string) => void } = $props();
 
 	let q = $state('');
 	let results = $state<string[]>([]);
@@ -28,7 +28,7 @@
 </script>
 
 <div class="hr-row">
-	<span class="hr-label">{label}{#if required}<b class="req">(*)</b>{/if}</span>
+	<span class="hr-label">{label}</span>
 	<input class="hr-name" readonly tabindex="-1" value={relation === '본인' ? '(본인)' : head ? head.name : ''} placeholder="이름" aria-label="선택한 사람" />
 	<input class="hr-q" bind:value={q} placeholder="이름·전화" disabled={relation === '본인'} onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); search(); } }} aria-label="검색어" />
 	<button type="button" class="ghost sm" onclick={search} disabled={relation === '본인'}>검색</button>
@@ -51,7 +51,6 @@
 <style>
 	.hr-row { display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; padding: 0.5rem 0.2rem; font-weight: 400; color: var(--text); }
 	.hr-label { font-weight: 700; font-size: 0.86rem; min-width: 9.2rem; color: var(--text); }
-	.req { color: var(--orange-600); margin-left: 0.1rem; }
 	.hr-name { width: 7rem; background: #eceff5; font-weight: 600; }
 	.hr-q { width: 9rem; }
 	.hr-rel { width: 8rem; }

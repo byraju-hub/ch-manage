@@ -57,14 +57,14 @@
 
 	<div class="kpis">
 		<div class="kpi"><div><b>{members.length}</b><span>재적 인원</span></div></div>
-		<div class="kpi"><div><b>{g.leader_id ? nameOf(g.leader_id) : '-'}</b><span>인도자{g.leader_id ? '' : ' (미정)'}</span></div></div>
+		<div class="kpi"><div><b>{g.leader_id ? nameOf(g.leader_id) : '-'}</b><span>{registry.tl}{g.leader_id ? '' : ' (미정)'}</span></div></div>
 		<div class="kpi"><div><b style="font-size:1.2rem">{g.place ?? '-'}</b><span>모임 장소</span></div></div>
 		<div class="kpi"><div><b>{weekly[7].n}<small class="muted" style="font-size:.9rem"> / {members.length}</small></b><span>이번 주일 {registry.t2} 모임 출석</span></div></div>
 	</div>
 
 	<div class="dash-grid even" style={registry.perms.visit ? undefined : 'grid-template-columns:1fr'}>
 		<section class="card">
-			<div class="card-head"><h2>{registry.t2} 모임 출석 추이</h2><span class="sub">최근 8주 · 인도자 등록 기준</span></div>
+			<div class="card-head"><h2>{registry.t2} 모임 출석 추이</h2><span class="sub">최근 8주 · {registry.tl} 등록 기준</span></div>
 			<div class="spark">
 				{#each weekly as w}
 					<div class="col"><span>{w.n}</span><i style="height:{(w.n * 100) / maxN}%"></i><small>{md(w.d)}</small></div>
@@ -73,7 +73,7 @@
 		</section>
 		{#if registry.perms.visit}
 		<section class="card">
-			<div class="card-head"><h2>인도자 특이사항</h2><span class="sub">(인도자가 출석 체크 화면에서 적는 교인별 메모와 기타 의견)</span></div>
+			<div class="card-head"><h2>{registry.tl} 특이사항</h2><span class="sub">({registry.tl}{registry.josa(registry.tl, '이')} 출석 체크 화면에서 적는 교인별 메모와 기타 의견)</span></div>
 			{#each notes.slice(0, 8) as n (n.id)}
 				<div class="li">
 					{#if n.person_id}
@@ -88,11 +88,11 @@
 			{#each reasons as r (r.d + r.p.id)}
 				<div class="li">
 					<span class="avatar warm">{r.p.name.slice(0, 1)}</span>
-					<div class="grow"><b><a href={hrefTo(`/${r.p.id}`)}>{r.p.name}</a></b><small>{r.d} 출석 체크 · 인도자 — {r.text}</small></div>
+					<div class="grow"><b><a href={hrefTo(`/${r.p.id}`)}>{r.p.name}</a></b><small>{r.d} 출석 체크 · {registry.tl} — {r.text}</small></div>
 				</div>
 			{/each}
 			{#if registry.perms.edit}
-				<form class="row" style="margin-top:.8rem;flex-wrap:nowrap" onsubmit={(e) => { e.preventDefault(); if (noteFor && noteBody.trim()) { registry.addGroupNote({ person_id: noteFor, small_group: g!.name, date: todayIso(), body: noteBody.trim(), author: nameOf(g!.leader_id) || '인도자' }); noteBody = ''; } }}>
+				<form class="row" style="margin-top:.8rem;flex-wrap:nowrap" onsubmit={(e) => { e.preventDefault(); if (noteFor && noteBody.trim()) { registry.addGroupNote({ person_id: noteFor, small_group: g!.name, date: todayIso(), body: noteBody.trim(), author: nameOf(g!.leader_id) || registry.tl }); noteBody = ''; } }}>
 					<select bind:value={noteFor} style="width:9rem"><option value="">교인 선택</option>{#each members as { p }}<option value={p.id}>{p.name}</option>{/each}</select>
 					<input bind:value={noteBody} placeholder="특이사항 입력" /><button type="submit">추가</button>
 				</form>
@@ -104,7 +104,7 @@
 	<div class="sort-row">
 		<span class="muted">정렬</span>
 		{#each SORTS as s}<button type="button" class="ghost sm" class:on={sortBy === s} onclick={() => (sortBy = s)}>{s}</button>{/each}
-		<span class="muted" style="font-size:.8rem">인도자는 늘 맨 위 · 출석률은 올해 {registry.t2} 모임 중 출석을 기록한 주일 기준 · 나이 순은 나이 많은 순</span>
+		<span class="muted" style="font-size:.8rem">{registry.tl}{registry.josa(registry.tl, '은')} 늘 맨 위 · 출석률은 올해 {registry.t2} 모임 중 출석을 기록한 주일 기준 · 나이 순은 나이 많은 순</span>
 	</div>
 	<div class="card" style="padding:0;overflow-x:auto">
 		<table class="sm" style="table-layout:fixed;min-width:900px">
@@ -114,7 +114,7 @@
 			<tbody>
 				{#each members as { p, s, rate } (p.id)}
 					<tr>
-						<td class="nw"><a href={hrefTo(`/${p.id}`)}>{p.name}</a>{#if p.id === g.leader_id}<span class="tag now">인도자</span>{/if}</td>
+						<td class="nw"><a href={hrefTo(`/${p.id}`)}>{p.name}</a>{#if p.id === g.leader_id}<span class="tag now">{registry.tl}</span>{/if}</td>
 						<td class="nw">{s.office ? officeKindTitle(s.office, p.clergy_title) : '-'}</td>
 						<td class="nw">{p.birth_date ?? '-'}{p.birth_lunar ? ' (음)' : ''}</td>
 						<td style="text-align:center">{ageOf(p.birth_date) ?? '-'}</td>

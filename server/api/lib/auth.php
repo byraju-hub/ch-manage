@@ -109,13 +109,27 @@ function require_super(): array
     return $u;
 }
 
+/** 교회 설정의 작은 모임 이름과 담당 호칭 (예: 구역 · 구역장). 정하지 않았으면 소그룹 · 인도자. */
+function leader_terms(): array
+{
+    $ci = json_decode((string)val('SELECT church_info FROM ' . t('site_settings') . ' WHERE id = 1'), true) ?: [];
+    return ['unit' => ($ci['unit2'] ?? '') ?: '소그룹', 'leader' => ($ci['leader'] ?? '') ?: '인도자'];
+}
+
+function leader_title(): string
+{
+    return implode(' ', leader_terms());
+}
+
 /** 등급별 권한 목록(grades 표)을 화면이 쓰는 모양으로. */
 function grade_defs(): array
 {
     $out = [];
     foreach (rows('SELECT * FROM ' . t('grades') . ' ORDER BY grade') as $g) {
         $out[] = [
-            'grade' => $g['grade'], 'name' => $g['name'],
+            'grade' => $g['grade'],
+            // D 등급 이름을 바꾼 적이 없으면 교회 설정의 호칭으로 보여 준다.
+            'name' => $g['name'] === 'D · 소그룹 인도자' ? 'D · ' . leader_title() : $g['name'],
             'perms' => [
                 'edit' => (int)$g['can_edit'] === 1, 'export' => (int)$g['can_export'] === 1,
                 'visit' => $g['grade'] === 'A', // 심방은 A 등급 고정

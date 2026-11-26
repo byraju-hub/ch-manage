@@ -11,7 +11,7 @@ const OFFICE_ORDER = ['목사', '전도사', '사모', '장로', '시무집사',
 function require_leader(): array
 {
     $u = require_user();
-    if (!is_leader_user($u)) json_fail('forbidden', '소그룹 인도자만 쓸 수 있는 화면입니다.', 403);
+    if (!is_leader_user($u)) json_fail('forbidden', leader_title() . ' 계정만 쓸 수 있는 화면입니다.', 403);
     return $u;
 }
 
@@ -109,11 +109,12 @@ function leader_members(array $g, string $leaderPersonId): array
 // 내 정보와 내가 인도하는 소그룹 목록
 route('GET', '/leader/groups', function () {
     $u = require_leader();
-    $s = row("SELECT JSON_VALUE(church_info, '$.unit2') AS unit2 FROM " . t('site_settings') . ' WHERE id = 1');
+    $terms = leader_terms();
     json_out([
         'name' => $u['name'],
         'linked' => !empty($u['person_id']),
-        'unit' => ($s['unit2'] ?? '') ?: '소그룹',
+        'unit' => $terms['unit'],
+        'leader' => $terms['leader'],
         'groups' => leader_groups($u),
         'sundays' => leader_sundays(),
     ]);

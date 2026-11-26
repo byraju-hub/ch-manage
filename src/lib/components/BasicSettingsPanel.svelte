@@ -2,7 +2,7 @@
 	import { hrefTo } from '#lib/registry/paths.ts';
 	// 관리자 › 교회 설정 › 기본 설정: 교회 기본 정보 · 로고 · 직인 · 증명서 양식
 	import { registry } from '#lib/registry/store.svelte.ts';
-	import { UNIT1_OPTIONS, UNIT2_OPTIONS, certNo, shrinkImage, squareIcon, type CertForm, type ChurchInfo } from '#lib/registry/site-settings.ts';
+	import { LEADER_OPTIONS, UNIT1_OPTIONS, UNIT2_OPTIONS, certNo, shrinkImage, squareIcon, type CertForm, type ChurchInfo } from '#lib/registry/site-settings.ts';
 
 	let info = $state<ChurchInfo>(structuredClone($state.snapshot(registry.churchInfo)) as ChurchInfo);
 	let cert = $state<CertForm>(structuredClone($state.snapshot(registry.certForm)) as CertForm);
@@ -130,7 +130,10 @@
 				{#if !UNIT2_OPTIONS.includes(info.unit2)}<input bind:value={info.unit2} placeholder="예: 가정교회" style="width:8rem" />{/if}
 			</span>
 		</label>
-		<span class="muted" style="font-size:.8rem">예) {info.unit1 || '1단계'} 편성표 · {info.unit2 || '2단계'}별 명단 · {info.unit2 || '2단계'} 특이사항 — 메뉴와 모든 화면에 적용됩니다.</span>
+		<label>담당
+			<select bind:value={info.leader}>{#each LEADER_OPTIONS as o}<option>{o}</option>{/each}</select>
+		</label>
+		<span class="muted" style="font-size:.8rem">예) {info.unit1 || '1단계'} 편성표 · {info.unit2 || '2단계'}별 명단 · {info.unit2 || '2단계'} {info.leader} — 메뉴와 모든 화면에 적용됩니다.</span>
 	</div>
 	<div class="row" style="justify-content:flex-end;margin-top:.8rem"><button type="button" onclick={saveInfo} disabled={!can}>교회 정보 저장</button></div>
 </section>

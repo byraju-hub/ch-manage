@@ -6,7 +6,7 @@ declare(strict_types=1);
 route('POST', '/auth/sso-ticket', function () {
     $u = require_user();
     if ((int)($u['is_demo'] ?? 0) === 1) json_fail('demo_readonly', '체험 계정에서는 재정 관리를 열 수 없어요.', 403);
-    if (is_leader_user($u)) json_fail('forbidden', '소그룹 인도자는 재정 관리를 열 수 없습니다.', 403);
+    if (is_leader_user($u)) json_fail('forbidden', leader_title() . ' 계정으로는 재정 관리를 열 수 없습니다.', 403);
     if (!finance_installed()) json_fail('finance_not_installed', '재정 관리가 설치되어 있지 않습니다.', 404);
 
     $tbl = t('sso_tickets');

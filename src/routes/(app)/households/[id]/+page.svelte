@@ -5,6 +5,7 @@
 	import { goto } from '$app/navigation';
 	import { registry } from '#lib/registry/store.svelte.ts';
 	import { RELATIONS } from '#lib/registry/types.ts';
+	import PersonPicker from '#lib/components/PersonPicker.svelte';
 
 	const h = $derived(registry.d.households.find((x) => x.id === page.params.id));
 	const members = $derived(h ? registry.membersOfHousehold(h.id) : []);
@@ -17,7 +18,8 @@
 	let nmRel = $state('부모');
 	let checked = $state<string[]>([]);
 
-	const candidates = $derived(registry.d.people.filter((p) => !members.some((m) => m.person_id === p.id)));
+	const isCandidate = (p: { id: string }) => !members.some((m) => m.person_id === p.id); // 이미 이 세대에 있는 사람은 검색에서 뺌
+	const moving = $derived(!!addPerson && !!registry.memberOf(addPerson));
 	const nameOf = (m: { person_id: string | null; name: string }) => (m.person_id ? registry.person(m.person_id)?.name : m.name);
 
 	function split() {
@@ -59,10 +61,11 @@
 		<div class="card">
 			<h2>교인을 세대원으로 추가·이동</h2>
 			<form class="row" onsubmit={(e) => { e.preventDefault(); if (addPerson) { registry.assignToHousehold(addPerson, h.id, addRel); addPerson = ''; } }}>
-				<select bind:value={addPerson} style="width:auto"><option value="">교인 선택</option>{#each candidates as p}<option value={p.id}>{p.name}{p.name_note ? ` (${p.name_note})` : ''}{registry.memberOf(p.id) ? ' — 다른 세대에서 이동' : ''}</option>{/each}</select>
-				<select bind:value={addRel} style="width:auto">{#each RELATIONS as r}<option>{r}</option>{/each}</select>
-				<button type="submit" disabled={!addPerson}>추가</button>
+				<div class="find"><PersonPicker bind:value={addPerson} only={isCandidate} placeholder="교인 이름·전화로 검색" /></div>
+				<select bind:value={addRel} style="width:auto" aria-label="관계">{#each RELATIONS as r}<option>{r}</option>{/each}</select>
+				<button type="submit" disabled={!addPerson}>{moving ? '이 세대로 이동' : '추가'}</button>
 			</form>
+			{#if moving}<p class="muted" style="margin:.4rem 0 0">다른 세대에 있는 교인입니다. 누르면 이 세대로 옮겨집니다.</p>{/if}
 			<h2 style="margin-top:1rem">교인이 아닌 가족 추가 <span class="muted" style="font-weight:400">(이름·출생연도만)</span></h2>
 			<form class="row" onsubmit={(e) => { e.preventDefault(); registry.addNonMember(h.id, nmName, nmYear ? +nmYear : null, nmRel); nmName = ''; nmYear = ''; }}>
 				<input style="width:9rem" placeholder="이름" bind:value={nmName} required />
@@ -77,3 +80,7 @@
 {:else}
 	<p>세대를 찾을 수 없습니다. <a href={hrefTo('/households')}>목록으로</a></p>
 {/if}
+
+<style>
+	.find { flex: 0 1 20rem; min-width: 14rem; }
+</style>

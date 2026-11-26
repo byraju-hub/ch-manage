@@ -255,6 +255,8 @@ class Registry {
 	// 교회마다 부르는 이름: 1단계(공동체·교구·지역…), 2단계(소그룹·구역·목장·셀…)
 	get t1(): string { return this.churchInfo.unit1 || '공동체'; }
 	get t2(): string { return this.churchInfo.unit2 || '소그룹'; }
+	// 담당 호칭: 모임을 맡은 사람 (전도해 온 분을 뜻하는 '인도자' 칸과는 다름)
+	get tl(): string { return this.churchInfo.leader || '인도자'; }
 	// 화면 글의 '공동체'·'소그룹'을 고른 이름으로 (탭·칸 이름처럼 값으로도 쓰는 글자를 보여 줄 때)
 	tr(s: string): string { return s.replaceAll('공동체', this.t1).replaceAll('소그룹', this.t2); }
 	// 받침에 맞는 조사: josa('교구', '을') → '를', josa('지역', '을') → '을'
@@ -507,7 +509,7 @@ class Registry {
 		const notes: { p: T.Person; body: string; kind: string }[] = [];
 		for (const n of this.d.notes) if (hit(n.body.toLowerCase())) { const p = this.person(n.person_id); if (p) notes.push({ p, body: n.body, kind: '담당자 메모' }); if (notes.length >= 4) break; }
 		// 인도자 특이사항은 건강 등 민감한 내용이 있어 심방 권한자만
-		if (this.perms.visit) for (const n of this.d.groupNotes) if (notes.length < 6 && hit(`${n.body} ${n.small_group}`.toLowerCase())) { const p = n.person_id ? this.person(n.person_id) : undefined; if (p) notes.push({ p, body: n.body, kind: `인도자 특이사항 · ${n.small_group}` }); }
+		if (this.perms.visit) for (const n of this.d.groupNotes) if (notes.length < 6 && hit(`${n.body} ${n.small_group}`.toLowerCase())) { const p = n.person_id ? this.person(n.person_id) : undefined; if (p) notes.push({ p, body: n.body, kind: `${this.tl} 특이사항 · ${n.small_group}` }); }
 		const orgs = this.d.orgUnits.filter((o) => hit(o.name.toLowerCase())).slice(0, 5);
 		return { people, groups, households, visits, notes, orgs, total };
 	}

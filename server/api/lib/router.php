@@ -63,5 +63,5 @@ function guard_leader(string $method, string $path): void
     $u = current_user();
     if (!$u || !is_leader_user($u)) return;
     if (preg_match('#^/leader/#', $path) || ($method === 'GET' && ($path === '/files/logo' || $path === '/files/favicon'))) return;
-    json_fail('forbidden', '소그룹 인도자는 소그룹 출석 화면만 쓸 수 있습니다.', 403);
+    json_fail('forbidden', leader_title() . ' 계정은 출석 화면만 쓸 수 있습니다.', 403);
 }

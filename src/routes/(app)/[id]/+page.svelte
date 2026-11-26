@@ -273,7 +273,7 @@
 				</form>
 			{/if}
 			{#if registry.perms.visit}
-			<h2 style="margin-top:1.2rem">인도자 특이사항 <span class="tag">출석부 자료</span></h2>
+			<h2 style="margin-top:1.2rem">{registry.tl} 특이사항 <span class="tag">출석부 자료</span></h2>
 			{#each gnotes as n (n.id)}<div style="margin-bottom:.4rem"><b>{n.date}</b> · {n.author} ({n.small_group}) — {n.body}</div>{:else}<p class="muted">적힌 특이사항이 없습니다.</p>{/each}
 			{/if}
 		</div>

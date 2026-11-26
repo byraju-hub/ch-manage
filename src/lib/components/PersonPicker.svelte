@@ -14,7 +14,7 @@
 		const t = q.trim().toLowerCase();
 		if (!t) return [];
 		const d = t.replace(/\D/g, '');
-		return registry.d.people.filter((p) => (!only || only(p)) && p.name.toLowerCase().includes(t) || (d.length >= 3 && (p.phone ?? '').replace(/\D/g, '').includes(d))).slice(0, 8);
+		return registry.d.people.filter((p) => (!only || only(p)) && (p.name.toLowerCase().includes(t) || (d.length >= 3 && (p.phone ?? '').replace(/\D/g, '').includes(d)))).slice(0, 8);
 	});
 	function place() {
 		if (!input) return;

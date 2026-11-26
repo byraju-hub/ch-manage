@@ -8,7 +8,7 @@
 
 	interface Group { id: string; name: string; place: string | null; community: string }
 	interface Member { id: string; name: string; office: string; isLeader: boolean; rate: number; present: boolean; reason: string; recorded: boolean }
-	interface Info { name: string; linked: boolean; unit: string; groups: Group[]; sundays: string[] }
+	interface Info { name: string; linked: boolean; unit: string; leader?: string; groups: Group[]; sundays: string[] }
 
 	let info = $state<Info | null>(null);
 	let groupId = $state('');
@@ -49,6 +49,9 @@
 	const md = (iso: string) => `${+iso.slice(5, 7)}월 ${+iso.slice(8, 10)}일`;
 	const errOf = (e: unknown, fallback: string) => (e instanceof ApiError || e instanceof Error ? e.message : fallback);
 	const group = $derived(info?.groups.find((g) => g.id === groupId));
+	const leader = $derived(info?.leader || '인도자'); // 교회 설정의 담당 호칭
+	// 받침에 맞는 '로/으로' (ㄹ 받침은 '로')
+	const ro = $derived.by(() => { const c = (leader.charCodeAt(leader.length - 1) - 0xac00) % 28; return c > 0 && c !== 8 ? '으로' : '로'; });
 
 	// 인도자는 늘 맨 위, 그 아래는 고른 순서
 	const shown = $derived(
@@ -157,7 +160,7 @@
 	<div class="top">
 		<div>
 			<h1>출석 체크</h1>
-			<p class="who">{info?.name ?? auth.user?.name}님 · {info?.unit ?? '소그룹'} 인도자</p>
+			<p class="who">{info?.name ?? auth.user?.name}님 · {info?.unit ?? '소그룹'} {leader}</p>
 		</div>
 		<div class="acts">
 			<button type="button" class="ghost sm" onclick={() => { pwOpen = !pwOpen; pwMsg = ''; }}>비밀번호 바꾸기</button>
@@ -179,7 +182,7 @@
 	{#if info && !info.linked}
 		<div class="card empty"><b>아직 연결된 교인이 없어요.</b><br />최고관리자에게 "내 계정을 교인과 연결해 달라"고 요청해 주세요.</div>
 	{:else if info && info.groups.length === 0}
-		<div class="card empty"><b>인도하는 {info.unit}이 없어요.</b><br />최고관리자에게 {info.unit}의 인도자로 등록해 달라고 요청해 주세요.</div>
+		<div class="card empty"><b>인도하는 {info.unit}이 없어요.</b><br />최고관리자에게 {info.unit}의 {leader}{ro} 등록해 달라고 요청해 주세요.</div>
 	{:else if info}
 		<div class="pickers">
 			{#if info.groups.length > 1}
@@ -223,7 +226,7 @@
 							<span class="box" aria-hidden="true"></span>
 						</label>
 						<div class="who2">
-							<div class="nm"><b>{m.name}</b>{#if m.isLeader}<span class="badge">리더</span>{/if}</div>
+							<div class="nm"><b>{m.name}</b>{#if m.isLeader}<span class="badge">{leader}</span>{/if}</div>
 							<small>{m.office ? `${m.office} · ` : ''}출석 {m.rate}%</small>
 						</div>
 						<input class="reason" bind:value={m.reason} oninput={mark} maxlength="255" placeholder="특이사항 (이 주차)" aria-label="{m.name} 특이사항" />

@@ -52,7 +52,7 @@
 			<!-- 휴대폰에서는 글자를 조금 줄이고 이름·숫자가 한 줄에 들어가도록 비율을 살짝 조정 -->
 			<table class="sm comm">
 				<colgroup><col class="c-g" /><col class="c-l" /><col class="c-p" /><col class="c-n" /><col class="c-n" /></colgroup>
-				<thead><tr><th>{registry.t2}</th><th>인도자</th><th>모임 장소</th><th>인원</th><th>출석</th></tr></thead>
+				<thead><tr><th>{registry.t2}</th><th>{registry.tl}</th><th>모임 장소</th><th>인원</th><th>출석</th></tr></thead>
 				<tbody>
 					{#each groups.filter((g) => g.community === c.name).sort((a, b) => a.sort_order - b.sort_order) as g (g.id)}
 						{@const s = stat.get(g.name)}

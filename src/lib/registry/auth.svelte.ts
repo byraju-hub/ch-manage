@@ -16,6 +16,7 @@ const apiBase = () => hrefTo('/api/v1'); // 서브폴더 설치도 맞도록 호
 interface MePayload {
 	church?: string; // 교회 이름 (로그인 전 화면에 보임)
 	privacy?: { officer: string; phone: string; email: string }; // 개인정보 처리방침에 보일 책임자·문의처
+	leaderTitle?: string; // 모임 이름 + 담당 호칭 (예: 구역 구역장)
 	demoAccount?: boolean; // 체험 계정(demo)이 켜져 있는지
 	user: AppUser | null;
 	perms?: Perms;
@@ -28,6 +29,7 @@ class Auth {
 	notInstalled = $state(false);
 	churchName = $state(''); // 교회 이름: 로그인하기 전에도 서버가 알려 줌
 	privacy = $state({ officer: '', phone: '', email: '' }); // 개인정보 책임자·문의처: 이것도 로그인 전에 보임
+	leaderTitle = $state('소그룹 인도자'); // 처리방침 화면에 쓰는 담당 호칭
 	netError = $state('');
 	demoAccount = $state(false); // 로그인 화면에 체험 계정 안내를 보일지
 	user = $state<AppUser | null>(null);
@@ -73,6 +75,7 @@ class Auth {
 		this.user = d.user;
 		if (d.church !== undefined) this.churchName = d.church;
 		if (d.privacy) this.privacy = d.privacy;
+		if (d.leaderTitle) this.leaderTitle = d.leaderTitle;
 		if (d.demoAccount !== undefined) this.demoAccount = d.demoAccount;
 		this.perms = d.perms ?? NO_PERMS;
 		if (d.grades) this.grades = d.grades;

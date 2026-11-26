@@ -43,7 +43,7 @@
 				<h4>{registry.t1} · {registry.t2}</h4>
 				{#each r.groups as g (g.id)}
 					<a class="gs-row" href={hrefTo(`/communities/${encodeURIComponent(g.name)}`)}><span class="avatar warm">{g.name.slice(0, 1)}</span>
-						<span class="grow"><b>{g.name}</b><small>{g.community} · {g.place ?? ''}{g.leader_id ? ` · 인도자 ${nameOf(g.leader_id)}` : ''}</small></span></a>
+						<span class="grow"><b>{g.name}</b><small>{g.community} · {g.place ?? ''}{g.leader_id ? ` · ${registry.tl} ${nameOf(g.leader_id)}` : ''}</small></span></a>
 				{/each}
 			{/if}
 			{#if r.households.length}

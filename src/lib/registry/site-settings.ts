@@ -22,6 +22,7 @@ export interface ChurchInfo {
 	privacyEmail: string; // 개인정보 문의 이메일. 비우면 교회 이메일
 	unit1: string; // 1단계 모임 이름: 공동체 · 교구 · 지역 …
 	unit2: string; // 2단계 모임 이름: 소그룹 · 구역 · 목장 · 셀 …
+	leader: string; // 담당 호칭(모임을 맡은 사람): 인도자 · 구역장 · 리더 …
 }
 export interface CertForm {
 	prefix: string; // 제
@@ -49,7 +50,7 @@ export interface BackupCfg {
 
 export const DEFAULT_CHURCH: ChurchInfo = {
 	name: '', denomination: '', address: '', phone: '', fax: '', email: '', homepage: '',
-	founded: '', bizNo: '', pastorLabel: '담임목사', pastorName: '', privacyOfficer: '', privacyPhone: '', privacyEmail: '', logo: null, seal: null, favicon: null, unit1: '공동체', unit2: '소그룹'
+	founded: '', bizNo: '', pastorLabel: '담임목사', pastorName: '', privacyOfficer: '', privacyPhone: '', privacyEmail: '', logo: null, seal: null, favicon: null, unit1: '공동체', unit2: '소그룹', leader: '인도자'
 };
 export const DEFAULT_CERT: CertForm = {
 	prefix: '제', format: '{연도}-{번호}', digits: 3, suffix: '호',
@@ -110,3 +111,4 @@ export function squareIcon(file: File, size = 128): Promise<string> {
 
 export const UNIT1_OPTIONS = ['공동체', '교구', '지역', '선교회'];
 export const UNIT2_OPTIONS = ['소그룹', '구역', '목장', '셀', '다락방'];
+export const LEADER_OPTIONS = ['인도자', '구역장', '리더', '섬김이', '지키미', '셀장', '진장'];

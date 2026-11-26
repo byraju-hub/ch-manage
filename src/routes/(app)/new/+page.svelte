@@ -45,7 +45,6 @@
 	const position = $derived(POSITIONS.find((x) => x.label === office.pos)!);
 	const statusOptions = $derived(position.office ? rankChoices(position.office) : []);
 	const committees = $derived(registry.d.orgUnits.filter((o) => !o.parent_id).sort((a, b) => a.sort_order - b.sort_order));
-	const missing = $derived([!f.photo && '사진', faith.kind === '해당사항 없음' && '신급', office.pos === '성도' && '직분'].filter(Boolean) as string[]);
 
 	$effect(() => { if (statusOptions.length && !statusOptions.includes(office.status)) office.status = statusOptions[0]; });
 
@@ -133,13 +132,13 @@
 {:else}
 	{#if bulkOpen}<div class="card" style="margin:.8rem 0"><MemberImport /></div>{/if}
 	{#if registry.features.ai}<CardScan onresult={applyCard} />{/if}
-	<p class="muted"><b class="req">*</b> 표시는 필수 항목입니다. 같은 이름·전화가 있으면 먼저 보여 줍니다.</p>
+	<p class="muted">이름<b class="req">*</b>만 필수 항목이고, 나머지는 비워 두어도 등록됩니다. 같은 이름·전화가 있으면 먼저 보여 줍니다.</p>
 	<form class="form card" onsubmit={submit}>
 		<PersonFields bind:f autoNote>
 			{#snippet household()}
 				<div class="sec">
 					<h3>세대주 · 관계</h3>
-					<HeadRelation label="신앙세대주 / 관계" required bind:headId={hhWith} bind:relation={hhRelation} onfetch={fetchHead} note="※세대주일 경우에는, 관계만 선택(본인)하시면 됩니다." />
+					<HeadRelation label="신앙세대주 / 관계" bind:headId={hhWith} bind:relation={hhRelation} onfetch={fetchHead} note="※세대주일 경우에는, 관계만 선택(본인)하시면 됩니다." />
 					{#if hhRelation !== '본인' && hhWith && !registry.householdOf(hhWith)}<div class="warn" style="margin-top:.5rem">그 교인은 아직 세대가 없어 새 세대로 등록됩니다.</div>{/if}
 				</div>
 			{/snippet}
@@ -156,11 +155,11 @@
 		<div class="sec">
 			<h3>신급 · 직분</h3>
 			<div class="form">
-				<label><span class="lt">신급<b class="req">*</b></span><select bind:value={faith.kind}><option>해당사항 없음</option>{#each FAITH_KINDS as k}<option>{k}</option>{/each}</select></label>
+				<label><span class="lt">신급</span><select bind:value={faith.kind}><option>해당사항 없음</option>{#each FAITH_KINDS as k}<option>{k}</option>{/each}</select></label>
 				<label>신급일<input type="date" bind:value={faith.date} disabled={faith.kind === '해당사항 없음'} /></label>
 				<label>신급교회<input bind:value={faith.church} placeholder="비우면 본 교회" disabled={faith.kind === '해당사항 없음'} /></label>
 				<label>집례자<input bind:value={faith.officiant} disabled={faith.kind === '해당사항 없음'} /></label>
-				<label><span class="lt">직분<b class="req">*</b></span><select bind:value={office.pos}>{#each POSITIONS as o}<option>{o.label}</option>{/each}</select></label>
+				<label><span class="lt">직분</span><select bind:value={office.pos}>{#each POSITIONS as o}<option>{o.label}</option>{/each}</select></label>
 				{#if position.office}
 					<label>구분<select bind:value={office.status}>{#each statusOptions as s}<option value={s}>{rankLabel(position.office!, s)}</option>{/each}</select></label>
 					{#if ORDAINED.includes(position.office)}
@@ -202,7 +201,6 @@
 			</div>
 		</div>
 
-		{#if missing.length}<div class="wide warn">필수 항목 중 아직 비어 있는 것: <b>{missing.join(' · ')}</b> (시험 중이라 그대로 등록할 수 있습니다)</div>{/if}
 		<div class="wide row"><button type="submit" disabled={!f.name.trim() || blocked}>등록</button><a class="btn ghost" href={hrefTo('/members')}>취소</a></div>
 	</form>
 {/if}

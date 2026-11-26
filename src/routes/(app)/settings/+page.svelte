@@ -134,7 +134,7 @@
 	{:else if tab === '소그룹 편성'}
 		<div class="card" style="padding:0;overflow-x:auto">
 			<div class="card-head" style="padding:1.1rem 1.3rem 0">
-				<div><h2>{registry.t2} 편성 <span class="tag">출석부 자료</span></h2><span class="sub">{registry.t2}{registry.josa(registry.t2, '을')} 추가·수정·삭제합니다. 이름을 바꾸면 소속 교인과 인도자 특이사항에도 바로 적용됩니다.</span></div>
+				<div><h2>{registry.t2} 편성 <span class="tag">출석부 자료</span></h2><span class="sub">{registry.t2}{registry.josa(registry.t2, '을')} 추가·수정·삭제합니다. 이름을 바꾸면 소속 교인과 {registry.tl} 특이사항에도 바로 적용됩니다.</span></div>
 				{#if !sgAdd}<button type="button" class="sm" onclick={() => { sgAdd = { community: registry.communities[0].name, name: '', leader: '', place: '' }; sgEdit = null; sgMsg = ''; }}>+ {registry.t2}</button>{/if}
 			</div>
 			{#if sgMsg}<div class="warn" style="margin:.8rem 1.3rem 0">{sgMsg}</div>{/if}
@@ -158,13 +158,13 @@
 				<form class="sg-add" onsubmit={(e) => { e.preventDefault(); sgMsg = registry.addSmallGroup(sgAdd!.community, sgAdd!.name, sgAdd!.place, sgAdd!.leader || null) ?? ''; if (!sgMsg) sgAdd = null; }}>
 					<label>{registry.t1}<select bind:value={sgAdd.community}>{#each registry.communities as c}<option>{c.name}</option>{/each}</select></label>
 					<label>{registry.t2} 이름 *<input bind:value={sgAdd.name} required placeholder="예: 새소망" /></label>
-					<label>인도자<PersonPicker bind:value={sgAdd.leader} placeholder="인도자 검색" /></label>
+					<label>{registry.tl}<PersonPicker bind:value={sgAdd.leader} placeholder="{registry.tl} 검색" /></label>
 					<label>모임 장소<input bind:value={sgAdd.place} placeholder="예: 다니엘관 101호" /></label>
 					<div class="row"><button type="submit" class="sm">추가</button><button type="button" class="ghost sm" onclick={() => { sgAdd = null; sgMsg = ''; }}>취소</button></div>
 				</form>
 			{/if}
 			<table class="sm">
-				<thead><tr><th>{registry.t1}</th><th>{registry.t2}</th><th style="min-width:220px">인도자</th><th>모임 장소</th><th>인원</th><th></th></tr></thead>
+				<thead><tr><th>{registry.t1}</th><th>{registry.t2}</th><th style="min-width:220px">{registry.tl}</th><th>모임 장소</th><th>인원</th><th></th></tr></thead>
 				<tbody>
 					{#each registry.communities as c, ci}
 						{#each registry.groupsIn(c.name) as g (g.id)}
@@ -172,7 +172,7 @@
 								<tr class="editing">
 									<td><select bind:value={sgEdit.community} aria-label="{registry.t1}">{#each registry.communities as x}<option>{x.name}</option>{/each}</select></td>
 									<td><input bind:value={sgEdit.name} aria-label="{registry.t2} 이름" /></td>
-									<td><PersonPicker bind:value={sgEdit.leader} placeholder="인도자 검색" /></td>
+									<td><PersonPicker bind:value={sgEdit.leader} placeholder="{registry.tl} 검색" /></td>
 									<td><input bind:value={sgEdit.place} aria-label="모임 장소" /></td>
 									<td style="white-space:nowrap">{registry.groupMemberCount(g.name)}명</td>
 									<td class="row" style="flex-wrap:nowrap">

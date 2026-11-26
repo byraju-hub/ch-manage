@@ -92,7 +92,7 @@
 		: c === '생년월일' ? (p.birth_date ? `${p.birth_date.replaceAll('-', '.')}${p.birth_lunar ? ' (음)' : ''}` : '')
 		: c === '나이' ? (ageOf(p.birth_date) ?? '') + ''
 		: c === '휴대폰' ? p.phone ?? ''
-		: leaders.has(p.id) ? '인도자' : '';
+		: leaders.has(p.id) ? registry.tl : '';
 	// 이름·직분만 고르면(상자 보기) A3 가로로, 표로 뽑으면 A4 세로로 인쇄
 	function printNow() {
 		const st = document.createElement('style');
@@ -180,14 +180,14 @@
 	</div>
 {/if}
 <p class="legend-att muted">{YEAR}년 {registry.t2} 모임 출석률 (1월 1일 ~ {WEEKS.at(-1)?.slice(5).replace('-', '/')} 중 출석을 기록한 주일만 셈) ·
-	<span class="hi">● 80% 이상</span> <span class="mid">● 50~79%</span> <span class="lo">● 50% 미만</span> <span class="lead">● 인도자</span>
+	<span class="hi">● 80% 이상</span> <span class="mid">● 50~79%</span> <span class="lo">● 50% 미만</span> <span class="lead">● {registry.tl}</span>
 	<span>(이름 옆 숫자는 개인 출석률)</span></p>
 {#each shown as c}
 	<h2 class="comm-h"><CommunityIcon name={c.community} />{c.community}</h2>
 	{#each c.groups as g}
 		<div class="card"><h3 style="margin:0 0 .5rem">{g.name} <span class="muted">({g.xs.length}명)</span> <small class="{band(g.rate)}">평균 출석률 {g.rate}%</small></h3>
 			<div class="names">
-				{#each g.xs as { p, s, rate }}{@const lead = leaders.has(p.id)}<a href={hrefTo(`/${p.id}`)} class="nm {lead ? 'lead' : band(rate)}" title="{lead ? '인도자 · ' : ''}올해 {registry.t2} 모임 출석률 {rate}%">{p.name}{s.title ? ` ${s.title}` : ''}<small>{lead ? '인도자 · ' : ''}{rate}%</small></a>{/each}
+				{#each g.xs as { p, s, rate }}{@const lead = leaders.has(p.id)}<a href={hrefTo(`/${p.id}`)} class="nm {lead ? 'lead' : band(rate)}" title="{lead ? `${registry.tl} · ` : ''}올해 {registry.t2} 모임 출석률 {rate}%">{p.name}{s.title ? ` ${s.title}` : ''}<small>{lead ? `${registry.tl} · ` : ''}{rate}%</small></a>{/each}
 			</div>
 		</div>
 	{/each}
@@ -205,7 +205,7 @@
 			{#each c.groups as g}
 				{@const lead = leaderOf(g.name)}
 				{#if tableMode}
-					<div class="grp-head">{c.community === '미지정' ? '' : `${c.community} › `}<b>{g.name}</b> ({g.xs.length}명){#if lead}<span>인도자 {lead}</span>{/if}</div>
+					<div class="grp-head">{c.community === '미지정' ? '' : `${c.community} › `}<b>{g.name}</b> ({g.xs.length}명){#if lead}<span>{registry.tl} {lead}</span>{/if}</div>
 					<table class="rt">
 						<colgroup><col style="width:{colPct('번호')}%" />{#each tableCols as c}<col style="width:{colPct(c)}%" />{/each}</colgroup>
 						<thead><tr><th>번호</th>{#each tableCols as c}<th>{c}</th>{/each}</tr></thead>
@@ -218,7 +218,7 @@
 				{:else}
 					<!-- 소그룹 제목과 이름 상자가 페이지 사이에서 떨어지지 않도록 한 덩어리로 -->
 					<div class="keep">
-						<div class="grp-head">{c.community === '미지정' ? '' : `${c.community} › `}<b>{g.name}</b> ({g.xs.length}명){#if lead}<span>인도자 {lead}</span>{/if}</div>
+						<div class="grp-head">{c.community === '미지정' ? '' : `${c.community} › `}<b>{g.name}</b> ({g.xs.length}명){#if lead}<span>{registry.tl} {lead}</span>{/if}</div>
 						<div class="nbox">
 							{#each g.xs as { p, s }}<span class="nb">{cell('이름', p, s)}{cols.직분 && s.title ? ` ${s.title}` : ''}</span>{/each}
 						</div>

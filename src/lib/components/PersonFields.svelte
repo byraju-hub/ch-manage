@@ -72,17 +72,17 @@
 		{:else}
 			<label>동명이인 구분<select bind:value={f.name_note}><option value="">해당 없음</option>{#each noteOptions as n}<option>{n}</option>{/each}</select></label>
 		{/if}
-		<label><span class="lt">생년월일<b class="req">*</b></span><input type="date" required bind:value={f.birth_date} /></label>
+		<label><span class="lt">생년월일</span><input type="date" bind:value={f.birth_date} /></label>
 		<label>양력 / 음력<select bind:value={f.birth_lunar}><option value={false}>양력</option><option value={true}>음력</option></select></label>
 		<label><span class="lt">나이 <small class="hint">(자동)</small></span><input value={age === null ? '' : ageText(f.birth_date)} readonly tabindex="-1" /></label>
-		<label><span class="lt">성별<b class="req">*</b></span><select required bind:value={f.gender}><option value="">선택</option><option value="M">남</option><option value="F">여</option></select></label>
+		<label><span class="lt">성별</span><select bind:value={f.gender}><option value="">선택</option><option value="M">남</option><option value="F">여</option></select></label>
 		<label>
-			<span class="row" style="justify-content:space-between;flex-wrap:nowrap"><span>휴대폰<b class="req">*</b></span>
+			<span class="row" style="justify-content:space-between;flex-wrap:nowrap"><span>휴대폰</span>
 				<span class="mini"><input type="checkbox" bind:checked={f.sms_opt_out} />문자 수신 거부</span></span>
-			<input required value={f.phone} oninput={(e) => (e.currentTarget.value = f.phone = formatMobile(e.currentTarget.value))} inputmode="numeric" maxlength="13" placeholder="010-0000-0000" />
+			<input value={f.phone} oninput={(e) => (e.currentTarget.value = f.phone = formatMobile(e.currentTarget.value))} inputmode="numeric" maxlength="13" placeholder="010-0000-0000" />
 		</label>
 		<label>이메일<input type="email" bind:value={f.email} /></label>
-		<label class="photo-box"><span class="lt">사진<b class="req">*</b></span>
+		<label class="photo-box"><span class="lt">사진</span>
 			<span class="row" style="flex-wrap:nowrap">
 				{#if f.photo}<img src={f.photo} alt="사진 미리보기" class="photo" />{:else}<span class="photo empty">없음</span>{/if}
 				<input type="file" accept="image/*" onchange={onPhoto} style="padding:.35rem" />
@@ -97,8 +97,8 @@
 <div class="sec">
 	<h3>주소</h3>
 	<div class="form">
-		<label class="wide"><span class="lt">주소<b class="req">*</b> <small class="hint">(검색해서 고르면 우편번호가 함께 들어갑니다)</small></span>
-			<span class="row" style="flex-wrap:nowrap"><input required bind:value={f.address1} placeholder="주소 검색 버튼을 누르세요" /><button type="button" class="ghost" onclick={searchAddress}>주소 검색</button></span>
+		<label class="wide"><span class="lt">주소 <small class="hint">(검색해서 고르면 우편번호가 함께 들어갑니다)</small></span>
+			<span class="row" style="flex-wrap:nowrap"><input bind:value={f.address1} placeholder="주소 검색 버튼을 누르세요" /><button type="button" class="ghost" onclick={searchAddress}>주소 검색</button></span>
 			{#if f.address_zip}<span class="muted" style="font-weight:400">우편번호 {f.address_zip}</span>{/if}
 			{#if addrMsg}<span class="muted" style="font-weight:400">{addrMsg}</span>{/if}
 		</label>

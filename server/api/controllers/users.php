@@ -115,7 +115,7 @@ route('POST', '/grades/{grade}', function (string $grade) {
         q('UPDATE ' . t('grades') . ' SET name = ? WHERE grade = ?', [$name, $grade]);
         audit('등급 이름 변경', $grade, ['name' => $name]);
     } else {
-        if ($grade === 'D') json_fail('forbidden', 'D 등급(소그룹 인도자)의 권한은 바꿀 수 없습니다.', 403);
+        if ($grade === 'D') json_fail('forbidden', 'D 등급(' . leader_title() . ')의 권한은 바꿀 수 없습니다.', 403);
         $perm = in_enum($b, 'perm', ['edit', 'export', 'admin'], '권한');
         $col = ['edit' => 'can_edit', 'export' => 'can_export', 'admin' => 'is_site_admin'][$perm];
         $value = !empty($b['value']) ? 1 : 0;

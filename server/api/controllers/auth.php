@@ -12,10 +12,10 @@ function me_payload(?array $u): array
     // 개인정보 처리방침 화면(로그인 전에도 열림)에 보일 책임자·문의처. 비워 두면 교회 대표 전화·이메일을 쓴다.
     $s = fn(string $k): string => mb_substr(trim((string)($ci[$k] ?? '')), 0, 100);
     $privacy = ['officer' => $s('privacyOfficer'), 'phone' => $s('privacyPhone') ?: $s('phone'), 'email' => $s('privacyEmail') ?: $s('email')];
-    if (!$u) return ['church' => $church, 'privacy' => $privacy, 'user' => null, 'demoAccount' => demo_account_exists(), 'csrf' => csrf_token()];
+    if (!$u) return ['church' => $church, 'privacy' => $privacy, 'leaderTitle' => leader_title(), 'user' => null, 'demoAccount' => demo_account_exists(), 'csrf' => csrf_token()];
     $dec = row('SELECT name FROM ' . t('users') . ' WHERE id = ?', [$u['decided_by'] ?? 0]);
     $u['decided_by_name'] = $dec['name'] ?? null;
-    return ['church' => $church, 'privacy' => $privacy, 'user' => user_payload($u), 'perms' => perms_of($u), 'grades' => grade_defs(), 'csrf' => csrf_token()];
+    return ['church' => $church, 'privacy' => $privacy, 'leaderTitle' => leader_title(), 'user' => user_payload($u), 'perms' => perms_of($u), 'grades' => grade_defs(), 'csrf' => csrf_token()];
 }
 
 const DEMO_LOGIN = 'demo';
