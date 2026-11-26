@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick, untrack } from 'svelte';
 	import { todayIso } from '#lib/registry/calendar.ts';
 	import { hrefTo } from '#lib/registry/paths.ts';
 	import { dm } from '#lib/registry/dm.svelte.ts';
@@ -13,7 +14,7 @@
 	import { ageOf, ageText, officeWithKind } from '#lib/registry/derive.ts';
 	import {
 		STATUS_KINDS, FAITH_KINDS, POSITIONS, ORDAINED, parseRank, rankChoices, rankLabel, CONSENT_KINDS, POLICY_VERSION, FULL_TIME_CLERGY,
-		type StatusKind, type FaithKind, type ConsentKind, type VisitMethod
+		type StatusKind, type FaithKind, type ConsentKind, type VisitMethod, type Visit
 	} from '#lib/registry/types.ts';
 
 	const p = $derived(registry.person(page.params.id!));
@@ -78,9 +79,45 @@
 	const ofPos = $derived(POSITIONS.find((x) => x.label === of.pos)!);
 	let noteBody = $state('');
 	let cs = $state<{ kind: ConsentKind; method: '서면' | '앱' | '구두'; guardian: string }>({ kind: '교적 등록', method: '서면', guardian: '' });
-	let vs = $state({ date: today, kind: '일반', method: '대면' as VisitMethod, pastor: '', scripture: '', hymn: '', content: '', follow: '' });
+	const blankVisit = () => ({ date: today, kind: '일반', method: '대면' as VisitMethod, pastor: '', scripture: '', hymn: '', content: '', follow: '' });
+	let vs = $state(blankVisit());
 	let vsCompanions = $state<Chip[]>([]);
-	let vsMsg = $state(''); // 심방 내용에서 자동으로 넣은 성도 일정 안내
+	let vsMsg = $state(''); // 저장·삭제 결과 (심방 내용에서 자동으로 넣은 성도 일정 포함)
+	let vsEditId = $state(''); // 비어 있으면 새 기록
+	let vsForm = $state<HTMLFormElement | null>(null);
+	const canVisit = $derived(registry.perms.visit && can);
+	function clearVisit() { vs = blankVisit(); vsCompanions = []; vsEditId = ''; }
+	// 다른 교인의 카드로 넘어가면 쓰던 심방 입력을 비움
+	$effect(() => { void page.params.id; untrack(() => { clearVisit(); vsMsg = ''; }); });
+	const chipOf = (n: string) => { const m = registry.d.people.filter((x) => x.name === n); return { id: m.length === 1 ? m[0].id : null, name: n }; };
+	async function startVisitEdit(x: Visit) {
+		vsEditId = x.id;
+		vs = { date: x.visit_date, kind: x.kind, method: x.method, pastor: x.pastor, scripture: x.scripture ?? '', hymn: x.hymn ?? '', content: x.content, follow: x.follow_up ?? '' };
+		vsCompanions = (x.companions ?? '').split(',').map((n) => n.trim()).filter(Boolean).map(chipOf);
+		vsMsg = '';
+		await tick();
+		vsForm?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+	}
+	function removeVisit(x: Visit) {
+		const n = registry.careEventsFrom(x).length;
+		if (!confirm(`${p!.name} 님의 ${x.visit_date} 심방 기록을 삭제합니다.${n ? `
+이 기록에서 자동 등록한 성도 일정 ${n}건도 함께 지워질 수 있습니다.` : ''}
+되돌릴 수 없습니다. 계속할까요?`)) return;
+		if (vsEditId === x.id) clearVisit();
+		const gone = registry.removeVisit(x.id);
+		vsMsg = `${x.visit_date} 심방 기록을 삭제했습니다.` + (gone ? ` 성도 일정 ${gone}건도 지웠습니다.` : '');
+	}
+	function saveVisit(e: SubmitEvent) {
+		e.preventDefault();
+		const data = { person_id: p!.id, visit_date: vs.date, kind: vs.kind, method: vs.method, pastor: vs.pastor || clergy[0]?.name || '담당 교역자', companions: vsCompanions.length ? vsCompanions.map((c) => c.name).join(', ') : null, scripture: nn(vs.scripture), hymn: nn(vs.hymn), content: vs.content, follow_up: nn(vs.follow) };
+		const edited = !!vsEditId;
+		const added = edited ? registry.updateVisit(vsEditId, data) : registry.addVisit(data);
+		const events = added.length ? `캘린더 성도 일정에 ${added.map((c) => `${+c.date.slice(5, 7)}/${+c.date.slice(8, 10)} ${c.label}`).join(', ')}을(를) 함께 넣었습니다.` : '';
+		vsMsg = edited ? `심방 기록을 수정했습니다. ${events}`.trim() : events;
+		if (edited) clearVisit();
+		// 새 기록은 이어서 적기 쉽게 날짜·구분·방법·담당은 그대로 둠
+		else { vs.content = ''; vs.follow = ''; vs.scripture = ''; vs.hymn = ''; vsCompanions = []; }
+	}
 	function applyAnalysis(r: Analysis) {
 		if (r.kind) vs.kind = r.kind;
 		if (r.content) vs.content = r.content;
@@ -326,21 +363,30 @@
 			{#if registry.perms.visit}
 				{#each byDate(visits.map((x) => ({ ...x, event_date: x.visit_date }))) as x (x.id)}
 					<div style="margin-bottom:.7rem"><b>{x.visit_date}</b> · {x.kind} · {x.method} · {x.pastor}{x.companions ? ` (동행 ${x.companions})` : ''}
-						<br />{x.content}{x.scripture ? ` · ${x.scripture}` : ''}{x.hymn ? ` · ${x.hymn}` : ''}{#if x.follow_up}<br /><span class="muted">후속 조치: {x.follow_up}</span>{/if}</div>
+						<br />{x.content}{x.scripture ? ` · ${x.scripture}` : ''}{x.hymn ? ` · ${x.hymn}` : ''}{#if x.follow_up}<br /><span class="muted">후속 조치: {x.follow_up}</span>{/if}
+						{#if canVisit}
+							<div class="row" style="gap:.4rem;margin-top:.3rem">
+								<button type="button" class="ghost xs" onclick={() => startVisitEdit(x)} aria-label="{x.visit_date} 심방 수정">수정</button>
+								<button type="button" class="ghost xs" onclick={() => removeVisit(x)} aria-label="{x.visit_date} 심방 삭제">삭제</button>
+							</div>
+						{/if}
+					</div>
 				{:else}<p class="muted">심방 기록이 없습니다.</p>{/each}
+				{#if vsMsg}<p class="ok" role="status">{vsMsg}</p>{/if}
 				{#if can}
-					<form class="form" onsubmit={(e) => { e.preventDefault(); const added = registry.addVisit({ person_id: p.id, visit_date: vs.date, kind: vs.kind, method: vs.method, pastor: vs.pastor || clergy[0]?.name || '담당 교역자', companions: vsCompanions.length ? vsCompanions.map((c) => c.name).join(', ') : null, scripture: nn(vs.scripture), hymn: nn(vs.hymn), content: vs.content, follow_up: nn(vs.follow) }); vsMsg = added.length ? `캘린더 성도 일정에 ${added.map((c) => `${+c.date.slice(5, 7)}/${+c.date.slice(8, 10)} ${c.label}`).join(', ')}을(를) 함께 넣었습니다.` : ''; vs.content = ''; vs.follow = ''; vs.scripture = ''; vs.hymn = ''; vsCompanions = []; }}>
+					<form class="form" bind:this={vsForm} onsubmit={saveVisit} style="scroll-margin-top:110px">
+						{#if vsEditId}<h3 class="wide" style="margin:0">심방 기록 수정</h3>{/if}
 						<label>날짜<input type="date" bind:value={vs.date} required /></label>
-						<label>구분<select bind:value={vs.kind}>{#each registry.codes.visitKinds as k}<option>{k}</option>{/each}</select></label>
+						<label>구분<select bind:value={vs.kind}>{#if !registry.codes.visitKinds.includes(vs.kind)}<option>{vs.kind}</option>{/if}{#each registry.codes.visitKinds as k}<option>{k}</option>{/each}</select></label>
 						<label>방법<select bind:value={vs.method}><option>대면</option><option>전화</option></select></label>
-						<label>담당 교역자<select bind:value={vs.pastor}><option value="">(선택)</option>{#each clergy as c}<option>{c.name}</option>{/each}</select></label>
+						<label>담당 교역자<select bind:value={vs.pastor}><option value="">(선택)</option>{#if vs.pastor && !clergy.some((c) => c.name === vs.pastor)}<option>{vs.pastor}</option>{/if}{#each clergy as c}<option>{c.name}</option>{/each}</select></label>
 						<label class="wide">동행자 <span class="muted" style="font-weight:400">(이름을 쓰고 쉼표)</span><NameChips bind:chips={vsCompanions} allowFree placeholder="예: 김영수, 이순희" /></label>
 						{#if registry.features.ai}<div class="wide"><VisitAnalyzer onresult={applyAnalysis} /></div>{/if}
 						<label>말씀<input bind:value={vs.scripture} /></label>
 						<label>찬송<input bind:value={vs.hymn} /></label>
 						<label class="wide"><span class="lt">심방 내용 <small class="hint">(예: 22일 입원, 23일 수술 과 같이 날짜와 함께 기록하면 캘린더의 성도 일정에 자동으로 입력이 됩니다.)</small></span><small class="hint">*자동 등록 해당 문구 : 입원 · 퇴원 · 수술 · 시술 · 검사 · 항암 · 치료 · 출산 · 돌잔치 · 결혼식 · 장례 · 입관 · 발인 · 이사 · 개업 · 입대 · 전역 · 제대 · 입학 · 졸업 · 출국 · 귀국 등</small><textarea rows="4" bind:value={vs.content} required></textarea></label>
 						<label class="wide">후속 조치<input bind:value={vs.follow} /><CarePreview text={`${vs.content}\n${vs.follow}`} base={vs.date} person={p.id} /></label>
-						<div class="wide row"><button type="submit">심방 기록 추가</button>{#if vsMsg}<span class="muted" style="font-size:.85rem">{vsMsg}</span>{/if}</div>
+						<div class="wide row"><button type="submit">{vsEditId ? '수정 저장' : '심방 기록 추가'}</button>{#if vsEditId}<button type="button" class="ghost" onclick={clearVisit}>취소</button>{/if}</div>
 					</form>
 				{/if}
 			{:else}
